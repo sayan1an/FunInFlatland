@@ -4,6 +4,10 @@ import numpy as np
 
 SCENE_BOUND = 10000
 
+def rotMat(ang):
+  ang = ang * np.pi / 180.0
+  return np.array([[np.cos(ang), np.sin(ang), 0], [-np.sin(ang), np.cos(ang), 0], [0, 0, 1]])
+
 # Abstract class Drawable
 # Base class for all drawable quantities
 class Drawable(ABC):
@@ -12,12 +16,20 @@ class Drawable(ABC):
         pass
 
 # Abstract class Intersectable
-# Base class for any shape or object that implements ray-shape intersection 
+# Base class for any shape or object that implements ray-shape intersection
 class Intersectable(ABC):
   @abstractmethod
   def intersect(self, ray): # Method returns an Intersection object, the normals and tangents must be unit length
       pass
-  
+
+class CameraRayPayload:
+  camRay = None
+  value = None # Final radiance at screen pixel
+  jitter = None # Jiterr from pixel start boundary
+  primaryHitPoint = None
+  secondayDirection = None
+  secondaryHitPoint = None
+
 class Point(Drawable):
   size = 1.0
   color = "black"
@@ -46,12 +58,12 @@ class Point(Drawable):
 
   def draw(self):
     pen = tl.Turtle()
+    pen.speed(0)
     pen.hideturtle()
     pen.width(self.size)
     pen.color(self.color)
     pen.up()
     pen.goto(self.pos[0], self.pos[1])
-    pen.speed(0)
     pen.down()
     pen.dot()
 
@@ -73,12 +85,12 @@ class Vector(Point):
 
   def draw(self):
     pen = tl.Turtle()
+    pen.speed(0)
     pen.shape("classic")
     pen.width(self.size)
     pen.color(self.color)
     pen.up()
     pen.goto(self.origin.pos[0], self.origin.pos[1])
-    pen.speed(0)
     pen.down()
     pen.setheading(np.angle([self.pos[0] + self.pos[1] * 1.0j], deg=True))
     pen.forward(self.t)
@@ -195,20 +207,29 @@ class PerspectiveCamera(Camera):
     self.rasterToScreen = np.array([[2.0 / screenRes , 0, -1], [0, 1, 0], [0, 0, 1]])
     self.screenToRaster = np.linalg.inv(self.rasterToScreen)
 
-  def generateRays(self):
-    rays = []
-    
+  def screenToRay(self, screenCoord):
     # Transform point (0,0,1) in camera space to world space
     rayOrigin = np.dot(self.cameraToWorld, np.array([0, 0, 1]))
-    for i in range(self.screenRes):
-      temp = np.dot(self.screenToCamera, np.dot(self.rasterToScreen, np.array([i, -self.near * 5, 1])))
-      temp[0] = temp[0] / temp[2]
-      temp[1] = temp[1] / temp[2]
-      temp[2] = 0
 
-      rayDir = np.dot(self.cameraToWorld, temp)
-      rays.append(Ray(Point(rayOrigin[0], rayOrigin[1]), Vector(rayDir[0], rayDir[1])))
+    temp = np.dot(self.screenToCamera, np.dot(self.rasterToScreen, np.array([screenCoord, -self.near * 5, 1])))
+    temp[0] = temp[0] / temp[2]
+    temp[1] = temp[1] / temp[2]
+    temp[2] = 0
+
+    rayDir = np.dot(self.cameraToWorld, temp)
+    return Ray(Point(rayOrigin[0], rayOrigin[1]), Vector(rayDir[0], rayDir[1]))
+
+  def generateRays(self, spp):
+    rays = [[] for i in range(self.screenRes)]
     
+    for s in range(spp):
+      jitter = s / float(spp)
+      for i in range(self.screenRes):
+        c = CameraRayPayload()
+        c.ray = self.screenToRay(i + jitter)
+        c.jitter = jitter
+        rays[i].append(c)
+
     return rays
 
   def draw(self):
@@ -243,17 +264,30 @@ class PerspectiveCamera(Camera):
     screen.color = "purple"
     screen.draw()
 
+class Material:
+  diffuseColor = None # Usually a texture
+  specularColor = None # Can also be a texture but usaully 1 - avg(diffuseColor) is used.
+  specularAlpha = None # Use beckmann brdf
+
+  def __init__(self, diffuseColor, specularAlpha = None, specularColor = None):
+    self.diffuseColor = diffuseColor
+    self.specularBrdf = specularBrdf
+    self.specularColor = specularColor
+
+  def eval(self, surfNorm, inDir, outDir):
+    pass
+
 class Line(Drawable, Intersectable):
   flipNormal = False
   size = 3.0
   color = "magenta"
-  start = Point(0.0, 0.0)
-  end = Point(0.0, 0.0)
+  start = None
+  end = None
   
   def __init__(self, start, end, flipNormal = False):
     self.flipNormal = flipNormal
-    self.start = start
-    self.end = end
+    self.start = Point(start.pos[0], start.pos[1])
+    self.end = Point(end.pos[0], end.pos[1])
       
   def drawNormal(self):
     v = self.end.sub(self.start)
@@ -270,12 +304,12 @@ class Line(Drawable, Intersectable):
 
   def draw(self):
     pen = tl.Turtle()
+    pen.speed(0)
     pen.hideturtle()
     pen.width(self.size)
     pen.color(self.color)
     pen.up()
     pen.goto(self.start.pos[0], self.start.pos[1])
-    pen.speed(0)
     pen.down()
     pen.goto(self.end.pos[0], self.end.pos[1])
     
@@ -302,44 +336,75 @@ class Line(Drawable, Intersectable):
         normal = normal.scale(-1)
     return Intersection(True, intersect, normal, tangent)
 
+class Light(Drawable, Intersectable):
+  geometry = None
+  radiance = None
+
+  def __init__(self, position, geometryString="line", length=50, orientation=0, radiance=1.0):
+    if geometryString == "line":
+      start = np.dot(rotMat(orientation), np.array([length/2, 0, 1]))
+      end = np.dot(rotMat(orientation), np.array([-length/2, 0, 1]))
+      start = position.add(Point(start[0], start[1]))
+      end = position.add(Point(end[0], end[1]))
+      self.geometry = Line(start, end, True)
+      self.geometry.color = "orange"
+    else:
+      self.geometry = "NotImplemented"
+    
+    self.radiance = radiance
+
+  def draw(self):
+    self.geometry.draw()
+
+  def intersect(self, ray):
+    return self.geometry.intersect(ray)
+  
 class Scene(Drawable, Intersectable):
-    objects = []
+  objects = []
 
-    def append(self, o):
-        self.objects.append(o)
+  def append(self, o):
+    self.objects.append(o)
     
-    def draw(self):
-        for o in self.objects:
-            o.draw()
+  def draw(self):
+    for o in self.objects:
+      o.draw()
     
-    def intersect(self, ray):
-      min_t = SCENE_BOUND
-      intersection = Intersection()
-      for o in self.objects:
-        i = o.intersect(ray)
-        if i.hit and ray.t < min_t:
-            min_t = ray.t
-            intersection = i
+  def intersect(self, ray):
+    min_t = SCENE_BOUND
+    intersection = Intersection()
+    retObj = None
+    for o in self.objects:
+      i = o.intersect(ray)
+      if i.hit and ray.t < min_t:
+        min_t = ray.t
+        intersection = i
 
-      ray.t = min_t
-      return intersection    
+    ray.t = min_t
+    return (intersection, retObj)    
   
 tl.Screen().title("2D Renderer")
 
-c = PerspectiveCamera(Vector(-300, 70), Vector(2, -2), 60, 10, 1000, 20)
-c.draw()
-rays = c.generateRays()
+camera = PerspectiveCamera(Vector(-300, 70), Vector(2, -2), 60, 10, 1000, 20)
+camera.draw()
+cameraRays = camera.generateRays(10)
 
 scene = Scene()
 #scene.append(Line(Point(-100,-75), Point(100, -50)))
+scene.append(Light(Point(0, 75), orientation=0, length=100))
 scene.append(Line(Point(-100,-100), Point(100, -100)))
 scene.append(Line(Point(-100,-75), Point(100, -100)))
 scene.append(Line(Point(-100, 100), Point(100,  100), True))
 scene.draw()
 
-for r in rays:
-  scene.intersect(r)
-  r.draw()
+def shade(cameraRayPayload):
+  (i, o) = scene.intersect(cameraRayPayload.ray)
+  cameraRayPayload.ray.draw()
+
+  return 1
+
+for iPixel in cameraRays:
+  for c in iPixel:
+    shade(c)
 
 tl.done()
   
