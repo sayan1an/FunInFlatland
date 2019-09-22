@@ -321,10 +321,13 @@ class Line(Drawable, Intersectable):
     t2 = v1.dot(v3) / v2.dot(v3)
     
     if t2 < 0 or t2 > 1:
-        return Intersection()
-
+      return Intersection()
+    
     intersect = self.start.add(v2.scale(t2))
-    ray.t = intersect.sub(ray.origin).length()
+    ray.t = intersect.sub(ray.origin).dot(ray)
+
+    if ray.t < 0:
+      return Intersection()
     
     tangent = Vector(v2.pos[0], v2.pos[1])
     tangent.normalize()
@@ -390,11 +393,11 @@ camera.draw()
 cameraRays = camera.generateRays(1)
 
 scene = Scene()
-#scene.append(Line(Point(-100,-75), Point(100, -50)))
+scene.append(Line(Point(-100,-75), Point(100, -50)))
 scene.append(Light(Point(0, 75), orientation=0, length=100))
-#scene.append(Line(Point(-100,-100), Point(100, -100)))
+scene.append(Line(Point(-100,-100), Point(100, -100)))
 scene.append(Line(Point(-100,-75), Point(100, -100)))
-#scene.append(Line(Point(-100, 100), Point(100,  100), True))
+scene.append(Line(Point(-100, 100), Point(100,  100), True))
 scene.draw()
 
 def angleToRays(angles, intersection):
@@ -410,8 +413,6 @@ def angleToRays(angles, intersection):
     secondaryRays.append(Ray(intersection.intersection, Vector(xWorld[i], yWorld[i])))
 
   return secondaryRays
-
-
 
 # returns an array of angle(s) and weights
 def sample(type, nSamples):
@@ -429,7 +430,6 @@ def shade(cameraRayPayload):
     cameraRayPayload.value = 0.0
     return
   
-  i.draw()
   cameraRayPayload.primaryHitPoint = i.intersection
 
   if isinstance(o, Light):
@@ -443,8 +443,6 @@ def shade(cameraRayPayload):
     (iSec, oSec) = scene.intersect(secondaryRay)
     print(str(secondaryRay.t) + " " + str(oSec))
     secondaryRay.draw()
-
-
   
 
   
