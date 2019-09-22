@@ -115,7 +115,7 @@ class Ray(Vector):
   def __init__(self, origin, direction):
     self.color = "blue"
     self.origin = Point(origin.pos[0], origin.pos[1])
-    self.pos = np.array([direction.pos[0], direction.pos[1], 1], dtype=float)
+    self.pos = np.array([direction.pos[0], direction.pos[1], 0], dtype=float)
     self.normalize()
     self.t = 0
   
@@ -131,8 +131,8 @@ class Intersection(Drawable):
   size = 2
   hit = False
   
-  intersection = None
-  normal = None
+  intersection = None # Point of intersection
+  normal = None # Normal and tangent at point of intersection
   tangent = None
 
   def __init__(self, hit=False , intersection=Point(0,0), normal=Vector(0,0), tangent=Vector(0,0)):
@@ -226,7 +226,7 @@ class PerspectiveCamera(Camera):
       jitter = s / float(spp)
       for i in range(self.screenRes):
         c = CameraRayPayload()
-        c.ray = self.screenToRay(i + jitter)
+        c.camRay = self.screenToRay(i + jitter)
         c.jitter = jitter
         rays[i].append(c)
 
@@ -375,9 +375,10 @@ class Scene(Drawable, Intersectable):
     retObj = None
     for o in self.objects:
       i = o.intersect(ray)
-      if i.hit and ray.t < min_t:
+      if i.hit and ray.t < min_t and ray.t > 1e-10:
         min_t = ray.t
         intersection = i
+        retObj = o
 
     ray.t = min_t
     return (intersection, retObj)    
@@ -386,21 +387,67 @@ tl.Screen().title("2D Renderer")
 
 camera = PerspectiveCamera(Vector(-300, 70), Vector(2, -2), 60, 10, 1000, 20)
 camera.draw()
-cameraRays = camera.generateRays(10)
+cameraRays = camera.generateRays(1)
 
 scene = Scene()
 #scene.append(Line(Point(-100,-75), Point(100, -50)))
 scene.append(Light(Point(0, 75), orientation=0, length=100))
-scene.append(Line(Point(-100,-100), Point(100, -100)))
+#scene.append(Line(Point(-100,-100), Point(100, -100)))
 scene.append(Line(Point(-100,-75), Point(100, -100)))
-scene.append(Line(Point(-100, 100), Point(100,  100), True))
+#scene.append(Line(Point(-100, 100), Point(100,  100), True))
 scene.draw()
 
-def shade(cameraRayPayload):
-  (i, o) = scene.intersect(cameraRayPayload.ray)
-  cameraRayPayload.ray.draw()
+def angleToRays(angles, intersection):
+  cosTheta = np.cos(angles)
+  sinTheta = np.sin(angles)
 
-  return 1
+  xWorld = intersection.tangent.pos[0] * cosTheta + intersection.normal.pos[0] * sinTheta
+  yWorld = intersection.tangent.pos[1] * cosTheta + intersection.normal.pos[1] * sinTheta
+  
+  secondaryRays = []
+  
+  for i in range(angles.shape[0]):
+    secondaryRays.append(Ray(intersection.intersection, Vector(xWorld[i], yWorld[i])))
+
+  return secondaryRays
+
+
+
+# returns an array of angle(s) and weights
+def sample(type, nSamples):
+  if type == "uniform":
+    angles = np.arange(0.0001, np.pi - 0.0001, np.pi/nSamples)
+    return (angles, np.ones(angles.shape))
+  else:
+    print("Sampler type not found")
+
+def shade(cameraRayPayload):
+  cameraRayPayload.camRay.draw()
+  (i, o) = scene.intersect(cameraRayPayload.camRay)
+  
+  if not i.hit:
+    cameraRayPayload.value = 0.0
+    return
+  
+  i.draw()
+  cameraRayPayload.primaryHitPoint = i.intersection
+
+  if isinstance(o, Light):
+    cameraRayPayload.value = o.radiance
+    return
+
+  (angles, weights) = sample("uniform", 20)
+  secondaryRays = angleToRays(angles, i)
+  
+  for secondaryRay in secondaryRays:
+    (iSec, oSec) = scene.intersect(secondaryRay)
+    print(str(secondaryRay.t) + " " + str(oSec))
+    secondaryRay.draw()
+
+
+  
+
+  
 
 for iPixel in cameraRays:
   for c in iPixel:
