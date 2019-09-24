@@ -4,6 +4,7 @@
 from abc import ABC, abstractmethod
 import turtle as tl
 import numpy as np
+import matplotlib.pyplot as plt
 
 SCENE_BOUND = 10000.0
 
@@ -225,8 +226,11 @@ class PerspectiveCamera(Camera):
   def generateRays(self, spp):
     rays = [[] for i in range(self.screenRes)]
     
-    for s in range(spp):
-      jitter = s / float(spp)
+    if spp % 2 == 0: # If even make it odd
+      spp = spp + 1
+    
+    for s in range(-int(spp/2), int(spp/2) + 1):
+      jitter = 0.5 + (s / float(spp))
       for i in range(self.screenRes):
         c = CameraRayPayload()
         c.camRay = self.screenToRay(i + jitter)
@@ -274,11 +278,15 @@ class Material:
 
   def __init__(self, diffuseColor, specularAlpha = None, specularColor = None):
     self.diffuseColor = diffuseColor
-    self.specularBrdf = specularBrdf
+    self.specularAlpha = specularAlpha
     self.specularColor = specularColor
 
-  def eval(self, surfNorm, inDir, outDir):
-    pass
+  def eval(self, surfNorm, viewDir, outDir):
+    if self.specularAlpha == None:
+      return self.diffuseColor / np.pi
+    else:
+      print("Specular brdf not implemented.")
+    
 
 class Line(Drawable, Intersectable):
   flipNormal = False
@@ -286,11 +294,13 @@ class Line(Drawable, Intersectable):
   color = "magenta"
   start = None
   end = None
+  material = None
   
-  def __init__(self, start, end, flipNormal = False):
+  def __init__(self, start, end, material=Material(1.0), flipNormal = False):
     self.flipNormal = flipNormal
     self.start = Point(start.pos[0], start.pos[1])
     self.end = Point(end.pos[0], end.pos[1])
+    self.material = material
       
   def drawNormal(self):
     v = self.end.sub(self.start)
@@ -354,7 +364,7 @@ class Light(Drawable, Intersectable):
       end = position.add(Point(end[0], end[1]))
       self.geometry = Line(start, end, True)
       self.geometry.color = "orange"
-    if geometryString == "env":
+    elif geometryString == "env":
       self.geometry = "env"
     else:
       self.geometry = "NotImplemented"
@@ -403,21 +413,6 @@ class Scene(Drawable, Intersectable):
     ray.t = min_t
     return (intersection, retObj)    
   
-tl.Screen().title("2D Renderer")
-
-camera = PerspectiveCamera(Vector(-300, 70), Vector(2, -2), 60, 10, 1000, 20)
-camera.draw()
-cameraRays = camera.generateRays(1)
-
-scene = Scene()
-scene.append(Line(Point(-100,-75), Point(100, -50)))
-scene.append(Light(radiance=0.4)) #Environment light
-#scene.append(Light("line", Point(0, 75), orientation=0, length=100))
-scene.append(Line(Point(-100,-100), Point(100, -100)))
-scene.append(Line(Point(-100,-75), Point(100, -100)))
-scene.append(Line(Point(-100, 100), Point(100,  100), True))
-scene.draw()
-
 def angleToRays(angles, intersection):
   cosTheta = np.cos(angles)
   sinTheta = np.sin(angles)
@@ -438,43 +433,77 @@ def sample(type, nSamples):
   if type == "uniform":
     angles = np.arange(0.5 * np.pi/nSamples, np.pi - 0.0001, np.pi/nSamples) - np.pi/2.0
     return (angles, np.ones(angles.shape) * np.pi/nSamples)
+  if type == "uniformRandom":
+    angles = np.random.uniform(0, 1, nSamples) * np.pi  - np.pi / 2.0
+    return (angles, np.ones(angles.shape) * np.pi/ nSamples)
+  if type == "cosine":
+    randList = np.random.uniform(0, 1, nSamples)
+    angles = np.arcsin(2*randList-1.0)
+    return (angles, np.ones(angles.shape) * 2.0 / (np.cos(angles) * nSamples))
   else:
     print("Sampler type not found")
 
 def shade(cameraRayPayload):
   cameraRayPayload.camRay.draw()
-  (i, o) = scene.intersect(cameraRayPayload.camRay)
+  (intersection, obj) = scene.intersect(cameraRayPayload.camRay)
   
-  if not i.hit:
+  if not intersection.hit:
     cameraRayPayload.value = 0.0
     return
   
-  cameraRayPayload.primaryHitPoint = i.intersection
+  cameraRayPayload.primaryHitPoint = intersection.intersection
 
-  if isinstance(o, Light):
+  if isinstance(obj, Light):
     cameraRayPayload.value = o.radiance
     return
 
   (angles, weights) = sample("uniform", 20)
-  secondaryRays = angleToRays(angles, i)
+  secondaryRays = angleToRays(angles, intersection)
   cosTheta = np.cos(angles)
-
-  for secondaryRay in secondaryRays:
-    (iSec, oSec) = scene.intersect(secondaryRay)
-    #print(str(secondaryRay.t) + " " + str(oSec))
-    secondaryRay.draw()
+  cosWeight = weights * cosTheta
+ 
+  value = 0
+  for i in range(len(secondaryRays)):
+    (iSec, oSec) = scene.intersect(secondaryRays[i])
+    #secondaryRays[i].draw()
     if isinstance(oSec, Light):
-      print(oSec.radiance)
+       brdfEval = obj.material.eval(intersection.normal, Vector(-cameraRayPayload.camRay.pos[0], -cameraRayPayload.camRay.pos[1]),  Vector(secondaryRays[i].pos[0], secondaryRays[i].pos[1]))
+       value = value + oSec.radiance * brdfEval * cosWeight[i] 
   
-#TODOs:
-#1. Implement material bsdf
-#2. Implement evaulation of pixels.
-#3. Visualize pixels.
-  
+  cameraRayPayload.value = value
 
+tl.Screen().title("2D Renderer")
+
+## Setup scene
+camera = PerspectiveCamera(Vector(-300, 70), Vector(2, -2), 60, 10, 1000, 20)
+camera.draw()
+cameraRays = camera.generateRays(100)
+
+scene = Scene()
+scene.append(Line(Point(-100,-75), Point(100, -50)))
+scene.append(Light(radiance=0.4)) #Environment light
+#scene.append(Light("line", Point(0, 75), 100, 0))
+scene.append(Line(Point(-100,-100), Point(100, -100)))
+scene.append(Line(Point(-100,-75), Point(100, -100)))
+scene.append(Line(Point(-100, 100), Point(100,  100), flipNormal=True))
+scene.draw()
+
+## Raytrace
 for iPixel in cameraRays:
   for c in iPixel:
     shade(c)
 
+## Collect radiance and convert into image
+image = np.zeros([len(cameraRays)])
+
+for iPixel in range(len(cameraRays)):
+  pixelSamples = cameraRays[iPixel]
+  spp = len(pixelSamples)
+
+  for c in pixelSamples:
+    image[iPixel] = image[iPixel] + c.value / spp
+
+plt.plot(image)
+plt.show()
+
 tl.done()
-  
