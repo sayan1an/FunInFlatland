@@ -1,8 +1,11 @@
+# World coordinates - Positive Y axis towards screen top. Positive X axis towards screen right.
+# Env Light - Env light is defined in the upper semi-circle with center at world (0,0). 
+
 from abc import ABC, abstractmethod
 import turtle as tl
 import numpy as np
 
-SCENE_BOUND = 10000
+SCENE_BOUND = 10000.0
 
 def rotMat(ang):
   ang = ang * np.pi / 180.0
@@ -343,7 +346,7 @@ class Light(Drawable, Intersectable):
   geometry = None
   radiance = None
 
-  def __init__(self, position, geometryString="line", length=50, orientation=0, radiance=1.0):
+  def __init__(self,  geometryString="env", position=Point(0,0), length=50, orientation=0, radiance=1.0):
     if geometryString == "line":
       start = np.dot(rotMat(orientation), np.array([length/2, 0, 1]))
       end = np.dot(rotMat(orientation), np.array([-length/2, 0, 1]))
@@ -351,15 +354,29 @@ class Light(Drawable, Intersectable):
       end = position.add(Point(end[0], end[1]))
       self.geometry = Line(start, end, True)
       self.geometry.color = "orange"
+    if geometryString == "env":
+      self.geometry = "env"
     else:
       self.geometry = "NotImplemented"
-    
+        
     self.radiance = radiance
 
   def draw(self):
+    if self.geometry == "env" or self.geometry == "NotImplemented":
+      return
+   
     self.geometry.draw()
 
   def intersect(self, ray):
+    if self.geometry == "env":
+      if ray.pos[1] < 0:
+        return Intersection()
+      
+      normal = Vector(-ray.pos[0], -ray.pos[1])
+      tangent = normal.getTangent()
+      ray.t = SCENE_BOUND - 1
+      return Intersection(True, normal, tangent)
+
     return self.geometry.intersect(ray)
   
 class Scene(Drawable, Intersectable):
@@ -394,7 +411,8 @@ cameraRays = camera.generateRays(1)
 
 scene = Scene()
 scene.append(Line(Point(-100,-75), Point(100, -50)))
-scene.append(Light(Point(0, 75), orientation=0, length=100))
+scene.append(Light(radiance=0.4)) #Environment light
+#scene.append(Light("line", Point(0, 75), orientation=0, length=100))
 scene.append(Line(Point(-100,-100), Point(100, -100)))
 scene.append(Line(Point(-100,-75), Point(100, -100)))
 scene.append(Line(Point(-100, 100), Point(100,  100), True))
@@ -404,8 +422,8 @@ def angleToRays(angles, intersection):
   cosTheta = np.cos(angles)
   sinTheta = np.sin(angles)
 
-  xWorld = intersection.tangent.pos[0] * cosTheta + intersection.normal.pos[0] * sinTheta
-  yWorld = intersection.tangent.pos[1] * cosTheta + intersection.normal.pos[1] * sinTheta
+  xWorld = intersection.tangent.pos[0] * sinTheta + intersection.normal.pos[0] * cosTheta
+  yWorld = intersection.tangent.pos[1] * sinTheta + intersection.normal.pos[1] * cosTheta
   
   secondaryRays = []
   
@@ -415,10 +433,11 @@ def angleToRays(angles, intersection):
   return secondaryRays
 
 # returns an array of angle(s) and weights
+# Note that angles are between -pi/2 to pi/2
 def sample(type, nSamples):
   if type == "uniform":
-    angles = np.arange(0.0001, np.pi - 0.0001, np.pi/nSamples)
-    return (angles, np.ones(angles.shape))
+    angles = np.arange(0.5 * np.pi/nSamples, np.pi - 0.0001, np.pi/nSamples) - np.pi/2.0
+    return (angles, np.ones(angles.shape) * np.pi/nSamples)
   else:
     print("Sampler type not found")
 
@@ -438,13 +457,19 @@ def shade(cameraRayPayload):
 
   (angles, weights) = sample("uniform", 20)
   secondaryRays = angleToRays(angles, i)
-  
+  cosTheta = np.cos(angles)
+
   for secondaryRay in secondaryRays:
     (iSec, oSec) = scene.intersect(secondaryRay)
-    print(str(secondaryRay.t) + " " + str(oSec))
+    #print(str(secondaryRay.t) + " " + str(oSec))
     secondaryRay.draw()
+    if isinstance(oSec, Light):
+      print(oSec.radiance)
   
-
+#TODOs:
+#1. Implement material bsdf
+#2. Implement evaulation of pixels.
+#3. Visualize pixels.
   
 
 for iPixel in cameraRays:
