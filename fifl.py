@@ -290,16 +290,24 @@ class Material:
     alpha_2 = self.specularAlpha * self.specularAlpha
 
     return np.exp(-tanThetaHalf_2/alpha_2) / (np.pi * alpha_2 * cosThetaHalf_2 * cosThetaHalf_2)
+  
+  def evalDiffuse(self, surfNorm, outDir):
+    return self.diffuseColor * outDir.dot(surfNorm) / np.pi
+  
+  def evalSpecular(self, surfNorm, viewDir, outDir):
+    wHalf = viewDir.add(outDir)
+    wHalf.normalize()
+    cosThetaHalf = wHalf.dot(surfNorm)
+    if (cosThetaHalf <= 1e-15):
+        return 0
+
+    return self.specularColor * self.D(cosThetaHalf) / (4 * viewDir.dot(surfNorm))
 
   def eval(self, surfNorm, viewDir, outDir):
     if self.specularAlpha == None:
-      return self.diffuseColor * outDir.dot(surfNorm) / np.pi
+      return self.evalDiffuse(surfNorm, outDir)
     else:
-      wHalf = viewDir.add(outDir)
-      wHalf.normalize()
-      cosThetaHalf = wHalf.dot(surfNorm)
-      if (cosThetaHalf <= 1e-15):
-        return 0
+      return self.evalSpecular(surfNorm, viewDir, outDir) + self.evalDiffuse(surfNorm, outDir)
 
 class Line(Drawable, Intersectable):
   flipNormal = False
