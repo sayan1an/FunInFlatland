@@ -300,7 +300,7 @@ class Material:
     cosThetaHalf = wHalf.dot(surfNorm)
     if (cosThetaHalf <= 1e-15):
         return 0
-
+    
     return self.specularColor * self.D(cosThetaHalf) / (4 * viewDir.dot(surfNorm))
 
   def eval(self, surfNorm, viewDir, outDir):
@@ -418,6 +418,10 @@ class Light(Drawable, Intersectable):
   
 class Scene(Drawable, Intersectable):
   objects = []
+  name = None
+  
+  def __init__(self, name="A scence"):
+    self.name = name
 
   def append(self, o):
     self.objects.append(o)
@@ -440,7 +444,7 @@ class Scene(Drawable, Intersectable):
     ray.t = min_t
     return (intersection, retObj)    
   
-def angleToRays(angles, intersection):
+def angleToRays(angles, intersection, mask=0xff):
   cosTheta = np.cos(angles)
   sinTheta = np.sin(angles)
 
@@ -450,7 +454,7 @@ def angleToRays(angles, intersection):
   secondaryRays = []
   
   for i in range(angles.shape[0]):
-    secondaryRays.append(Ray(intersection.intersection, Vector(xWorld[i], yWorld[i])))
+    secondaryRays.append(Ray(intersection.intersection, Vector(xWorld[i], yWorld[i]), mask=mask))
 
   return secondaryRays
 
@@ -470,65 +474,65 @@ def sample(type, nSamples):
   else:
     print("Sampler type not found")
 
-def shade(cameraRayPayload):
-  cameraRayPayload.camRay.draw()
-  (intersection, obj) = scene.intersect(cameraRayPayload.camRay)
-  
-  if not intersection.hit:
-    cameraRayPayload.value = 0.0
-    return
-  
-  cameraRayPayload.primaryHitPoint = intersection.intersection
-
-  if isinstance(obj, Light):
-    cameraRayPayload.value = o.radiance
-    return
-
-  (angles, weights) = sample("uniform", 20)
-  secondaryRays = angleToRays(angles, intersection)
- 
-  value = 0
-  for i in range(len(secondaryRays)):
-    (iSec, oSec) = scene.intersect(secondaryRays[i])
-    #secondaryRays[i].draw()
-    if isinstance(oSec, Light):
-       brdfEval = obj.material.eval(intersection.normal, Vector(-cameraRayPayload.camRay.pos[0], -cameraRayPayload.camRay.pos[1]),  Vector(secondaryRays[i].pos[0], secondaryRays[i].pos[1]))
-       value = value + oSec.radiance * brdfEval * weights[i] 
-  
-  cameraRayPayload.value = value
-
 tl.Screen().title("2D Renderer")
 
-## Setup scene
-camera = PerspectiveCamera(Vector(-300, 70), Vector(2, -2), 60, 10, 1000, 20)
-camera.draw()
-cameraRays = camera.generateRays(100)
+# def shade(cameraRayPayload):
+#   cameraRayPayload.camRay.draw()
+#   (intersection, obj) = scene.intersect(cameraRayPayload.camRay)
+  
+#   if not intersection.hit:
+#     cameraRayPayload.value = 0.0
+#     return
+  
+#   cameraRayPayload.primaryHitPoint = intersection.intersection
 
-scene = Scene()
-scene.append(Line(Point(-100,-75), Point(100, -50)))
-scene.append(Light(radiance=0.4)) #Environment light
-#scene.append(Light("line", Point(0, 75), 100, 0))
-scene.append(Line(Point(-100,-100), Point(100, -100)))
-scene.append(Line(Point(-100,-75), Point(100, -100)))
-scene.append(Line(Point(-100, 100), Point(100,  100), flipNormal=True))
-scene.draw()
+#   if isinstance(obj, Light):
+#     cameraRayPayload.value = o.radiance
+#     return
 
-## Raytrace
-for iPixel in cameraRays:
-  for c in iPixel:
-    shade(c)
+#   (angles, weights) = sample("uniform", 20)
+#   secondaryRays = angleToRays(angles, intersection)
+ 
+#   value = 0
+#   for i in range(len(secondaryRays)):
+#     (iSec, oSec) = scene.intersect(secondaryRays[i])
+#     #secondaryRays[i].draw()
+#     if isinstance(oSec, Light):
+#        brdfEval = obj.material.eval(intersection.normal, Vector(-cameraRayPayload.camRay.pos[0], -cameraRayPayload.camRay.pos[1]),  Vector(secondaryRays[i].pos[0], secondaryRays[i].pos[1]))
+#        value = value + oSec.radiance * brdfEval * weights[i] 
+  
+#   cameraRayPayload.value = value
 
-## Collect radiance and convert into image
-image = np.zeros([len(cameraRays)])
+# ## Setup scene
+# camera = PerspectiveCamera(Vector(-300, 70), Vector(2, -2), 60, 10, 1000, 20)
+# camera.draw()
+# cameraRays = camera.generateRays(100)
 
-for iPixel in range(len(cameraRays)):
-  pixelSamples = cameraRays[iPixel]
-  spp = len(pixelSamples)
+# scene = Scene()
+# scene.append(Line(Point(-100,-75), Point(100, -50)))
+# scene.append(Light(radiance=0.4)) #Environment light
+# #scene.append(Light("line", Point(0, 75), 100, 0))
+# scene.append(Line(Point(-100,-100), Point(100, -100)))
+# scene.append(Line(Point(-100,-75), Point(100, -100)))
+# scene.append(Line(Point(-100, 100), Point(100,  100), flipNormal=True))
+# scene.draw()
 
-  for c in pixelSamples:
-    image[iPixel] = image[iPixel] + c.value / spp
+# ## Raytrace
+# for iPixel in cameraRays:
+#   for c in iPixel:
+#     shade(c)
 
-plt.plot(image)
-plt.show()
+# ## Collect radiance and convert into image
+# image = np.zeros([len(cameraRays)])
 
-tl.done()
+# for iPixel in range(len(cameraRays)):
+#   pixelSamples = cameraRays[iPixel]
+#   spp = len(pixelSamples)
+
+#   for c in pixelSamples:
+#     image[iPixel] = image[iPixel] + c.value / spp
+
+# plt.plot(image)
+# plt.show()
+
+# tl.done()
