@@ -22,6 +22,7 @@ class Drawable(ABC):
 # Abstract class Intersectable
 # Base class for any shape or object that implements ray-shape intersection
 class Intersectable(ABC):
+  mask = None
   @abstractmethod
   def intersect(self, ray): # Method returns an Intersection object, the normals and tangents must be unit length
       pass
@@ -116,12 +117,14 @@ class Vector(Point):
     return Vector(v.pos[0], v.pos[1])
 
 class Ray(Vector):
-  def __init__(self, origin, direction):
+  mask = None
+  def __init__(self, origin, direction, mask=0xff):
     self.color = "blue"
     self.origin = Point(origin.pos[0], origin.pos[1])
     self.pos = np.array([direction.pos[0], direction.pos[1], 0], dtype=float)
     self.normalize()
     self.t = 0
+    self.mask = mask
   
   def draw(self):
     if self.t > 0:
@@ -276,17 +279,27 @@ class Material:
   specularColor = None # Can also be a texture but usaully 1 - avg(diffuseColor) is used.
   specularAlpha = None # Use beckmann brdf
 
-  def __init__(self, diffuseColor, specularAlpha = None, specularColor = None):
-    self.diffuseColor = diffuseColor
+  def __init__(self, specularColor, specularAlpha = None):
+    self.diffuseColor = 1 - specularColor
     self.specularAlpha = specularAlpha
     self.specularColor = specularColor
 
+  def D(self, cosThetaHalf):
+    cosThetaHalf_2 = cosThetaHalf * cosThetaHalf
+    tanThetaHalf_2 = (1 - cosThetaHalf_2) / cosThetaHalf_2
+    alpha_2 = self.specularAlpha * self.specularAlpha
+
+    return np.exp(-tanThetaHalf_2/alpha_2) / (np.pi * alpha_2 * cosThetaHalf_2 * cosThetaHalf_2)
+
   def eval(self, surfNorm, viewDir, outDir):
     if self.specularAlpha == None:
-      return self.diffuseColor / np.pi
+      return self.diffuseColor * outDir.dot(surfNorm) / np.pi
     else:
-      print("Specular brdf not implemented.")
-    
+      wHalf = viewDir.add(outDir)
+      wHalf.normalize()
+      cosThetaHalf = wHalf.dot(surfNorm)
+      if (cosThetaHalf <= 1e-15):
+        return 0
 
 class Line(Drawable, Intersectable):
   flipNormal = False
@@ -295,12 +308,13 @@ class Line(Drawable, Intersectable):
   start = None
   end = None
   material = None
-  
-  def __init__(self, start, end, material=Material(1.0), flipNormal = False):
+    
+  def __init__(self, start, end, material=Material(0.0), flipNormal=False, mask=0xff):
     self.flipNormal = flipNormal
     self.start = Point(start.pos[0], start.pos[1])
     self.end = Point(end.pos[0], end.pos[1])
     self.material = material
+    self.mask = mask
       
   def drawNormal(self):
     v = self.end.sub(self.start)
@@ -327,6 +341,8 @@ class Line(Drawable, Intersectable):
     pen.goto(self.end.pos[0], self.end.pos[1])
     
   def intersect(self, ray):
+    if not (self.mask & ray.mask):
+        return Intersection()
     v1 = ray.origin.sub(self.start)
     v2 = self.end.sub(self.start)
     v3 = Point(-ray.pos[1], ray.pos[0])
@@ -355,8 +371,7 @@ class Line(Drawable, Intersectable):
 class Light(Drawable, Intersectable):
   geometry = None
   radiance = None
-
-  def __init__(self,  geometryString="env", position=Point(0,0), length=50, orientation=0, radiance=1.0):
+  def __init__(self,  geometryString="env", position=Point(0,0), length=50, orientation=0, radiance=1.0, mask=0xff):
     if geometryString == "line":
       start = np.dot(rotMat(orientation), np.array([length/2, 0, 1]))
       end = np.dot(rotMat(orientation), np.array([-length/2, 0, 1]))
@@ -368,7 +383,8 @@ class Light(Drawable, Intersectable):
       self.geometry = "env"
     else:
       self.geometry = "NotImplemented"
-        
+
+    self.mask = mask  
     self.radiance = radiance
 
   def draw(self):
@@ -378,6 +394,9 @@ class Light(Drawable, Intersectable):
     self.geometry.draw()
 
   def intersect(self, ray):
+    if not (self.mask & ray.mask):
+      return Intersection()
+
     if self.geometry == "env":
       if ray.pos[1] < 0:
         return Intersection()
@@ -459,8 +478,6 @@ def shade(cameraRayPayload):
 
   (angles, weights) = sample("uniform", 20)
   secondaryRays = angleToRays(angles, intersection)
-  cosTheta = np.cos(angles)
-  cosWeight = weights * cosTheta
  
   value = 0
   for i in range(len(secondaryRays)):
@@ -468,7 +485,7 @@ def shade(cameraRayPayload):
     #secondaryRays[i].draw()
     if isinstance(oSec, Light):
        brdfEval = obj.material.eval(intersection.normal, Vector(-cameraRayPayload.camRay.pos[0], -cameraRayPayload.camRay.pos[1]),  Vector(secondaryRays[i].pos[0], secondaryRays[i].pos[1]))
-       value = value + oSec.radiance * brdfEval * cosWeight[i] 
+       value = value + oSec.radiance * brdfEval * weights[i] 
   
   cameraRayPayload.value = value
 
