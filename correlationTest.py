@@ -7,15 +7,14 @@ alphas = [0.15, 0.25]
 
 # Scene 1 - Environment Light
 for alpha in alphas:
-    material = Material(1.0, specularAlpha=alpha)
-    scene = Scene(str(alpha))
+    __scene = Scene(str(alpha))
     #reciever plane
-    scene.append(Line(Point(-100,-75), Point(100, -75), material=material))
+    __scene.append(Line(Point(-100,-75), Point(100, -75), material=Material(1.0, specularAlpha=alpha)))
     # Occluder
-    scene.append(Line(Point(-25,125), Point(75, 125), material=Material(1.0, specularAlpha=0.5), mask=0xf0))
+    __scene.append(Line(Point(-25,125), Point(75, 125), material=Material(1.0, specularAlpha=0.5), mask=0xf0))
     #environment light
-    scene.append(Light(radiance=0.4, mask=0xff))
-    scenes.append(scene)
+    __scene.append(Light(radiance=0.4, mask=0xff))
+    scenes.append(__scene)
     
 def generatePrimaryRays(nRays):
     cameraFoucus_x = 0
@@ -49,7 +48,7 @@ def shade(scene, primaryRay, nSecondaryRays):
   (angles, weights) = sample("uniform", nSecondaryRays)
   shadowRays = angleToRays(angles, intersection)
   lightRays = angleToRays(angles, intersection, 0x0f)
-
+ 
   shadowSamples = []
   formFactorSamples = []
   lightSamples = []
@@ -101,10 +100,8 @@ def computeCorrelations(shadowSamples, formFactorSamples, lightSamples, actualSa
     #print(approxTerm)
     #print(actualTerm)
 
-    #if (np.abs(correlationTerm + approxTerm - actualTerm) < 1e-10):
-    #    print("Verified correct")
-    #else:
-    #    print("Incorrect caluculations")
+    if not (np.abs(correlationTerm + approxTerm - actualTerm) < 1e-10):
+        print("Incorrect caluculations")
 
     return np.abs(correlationTerm / actualTerm) * 100
 
@@ -119,11 +116,10 @@ def computeCorrelations(shadowSamples, formFactorSamples, lightSamples, actualSa
 # plt.show()
 
 errorVaryAlpha = []
-(primaryRays, viewingAngles) = generatePrimaryRays(20)
 for scene in scenes:
-    print(scene.name)
     errorVaryView = []
     index = 0
+    (primaryRays, viewingAngles) = generatePrimaryRays(20)
     for primaryRay in primaryRays:
         (incidentAngles, shadowSamples, formFactorSamples, lightSamples, actualSamples)  = shade(scene, primaryRay, 100)
         errorVaryView.append(computeCorrelations(shadowSamples, formFactorSamples, lightSamples, actualSamples))

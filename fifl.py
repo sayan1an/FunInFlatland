@@ -36,11 +36,13 @@ class CameraRayPayload:
   secondaryHitPoint = None
 
 class Point(Drawable):
-  size = 1.0
-  color = "black"
+  size = None
+  color = None
   pos = None
 
   def __init__(self, x, y, z = 1):
+    self.size = 3
+    self.color = "black"
     self.pos = np.array([x, y, z], dtype=float)
   
   def sub(self, point):
@@ -73,7 +75,7 @@ class Point(Drawable):
     pen.dot()
 
 class Vector(Point):
-  t = 0.0
+  t = None
   origin = None
     
   def __init__(self, x, y, z=0):
@@ -134,15 +136,17 @@ class Ray(Vector):
         super().draw()
 
 class Intersection(Drawable):
-  color = "red"
-  size = 2
-  hit = False
+  color = None
+  size = None
+  hit = None
   
   intersection = None # Point of intersection
   normal = None # Normal and tangent at point of intersection
   tangent = None
 
   def __init__(self, hit=False , intersection=Point(0,0), normal=Vector(0,0), tangent=Vector(0,0)):
+    self.color = "red"
+    self.size = 2
     self.hit = hit
     self.intersection = Point(intersection.pos[0], intersection.pos[1])
     self.normal = Vector(normal.pos[0], normal.pos[1])
@@ -310,9 +314,9 @@ class Material:
       return self.evalSpecular(surfNorm, viewDir, outDir) + self.evalDiffuse(surfNorm, outDir)
 
 class Line(Drawable, Intersectable):
-  flipNormal = False
-  size = 3.0
-  color = "magenta"
+  flipNormal = None
+  size = None
+  color = None
   start = None
   end = None
   material = None
@@ -321,7 +325,9 @@ class Line(Drawable, Intersectable):
     self.flipNormal = flipNormal
     self.start = Point(start.pos[0], start.pos[1])
     self.end = Point(end.pos[0], end.pos[1])
-    self.material = material
+    self.material = Material(material.specularColor, material.specularAlpha)
+    self.size = 3
+    self.color = "magenta"
     self.mask = mask
       
   def drawNormal(self):
@@ -385,7 +391,7 @@ class Light(Drawable, Intersectable):
       end = np.dot(rotMat(orientation), np.array([-length/2, 0, 1]))
       start = position.add(Point(start[0], start[1]))
       end = position.add(Point(end[0], end[1]))
-      self.geometry = Line(start, end, True)
+      self.geometry = Line(start, end, flipNormal=True)
       self.geometry.color = "orange"
     elif geometryString == "env":
       self.geometry = "env"
@@ -417,10 +423,11 @@ class Light(Drawable, Intersectable):
     return self.geometry.intersect(ray)
   
 class Scene(Drawable, Intersectable):
-  objects = []
+  objects = None
   name = None
   
   def __init__(self, name="A scence"):
+    self.objects = [] 
     self.name = name
 
   def append(self, o):
