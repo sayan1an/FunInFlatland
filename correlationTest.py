@@ -3,7 +3,7 @@ from fifl import *
 ######################################### Define Scenes #######################
 
 scenes = []
-alphas = [0.15, 0.25]
+alphas = [0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1]
 
 # Scene 1 - Environment Light
 for alpha in alphas:
@@ -11,7 +11,7 @@ for alpha in alphas:
     #reciever plane
     scene.append(Line(Point(-100,-75), Point(100, -75), material=Material(1.0, specularAlpha=alpha)))
     # Occluder
-    scene.append(Line(Point(-25,125), Point(75, 125), material=Material(1.0, specularAlpha=0.5), mask=0xf0))
+    #scene.append(Line(Point(-75,125), Point(25, 125), material=Material(1.0, specularAlpha=0.5), mask=0xf0))
     #environment light
     scene.append(Light(radiance=0.4, mask=0xff))
     scenes.append(scene)
@@ -116,18 +116,23 @@ def computeCorrelations(shadowSamples, formFactorSamples, lightSamples, actualSa
 # plt.show()
 
 errorVaryAlpha = []
+nPrimaryRays = 20
+nSecondaryRays = 500
 for scene in scenes:
     errorVaryView = []
     index = 0
-    (primaryRays, viewingAngles) = generatePrimaryRays(20)
+    (primaryRays, viewingAngles) = generatePrimaryRays(nPrimaryRays)
     for primaryRay in primaryRays:
-        (incidentAngles, shadowSamples, formFactorSamples, lightSamples, actualSamples)  = shade(scene, primaryRay, 100)
+        (incidentAngles, shadowSamples, formFactorSamples, lightSamples, actualSamples)  = shade(scene, primaryRay, nSecondaryRays)
         errorVaryView.append(computeCorrelations(shadowSamples, formFactorSamples, lightSamples, actualSamples))
         #print(index)
         index = index + 1
-    plt.plot(errorVaryView)
-    plt.ylim(0, 50)
-    plt.show()
     errorVaryAlpha.append(errorVaryView)
 
+(primaryRays, viewingAngles) = generatePrimaryRays(nPrimaryRays)
+for trajectory in errorVaryAlpha:
+    plt.plot(viewingAngles, trajectory)
+
+plt.ylim(0, 50)
+plt.show()
 tl.done()
