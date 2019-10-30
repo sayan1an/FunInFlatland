@@ -7,14 +7,14 @@ alphas = [0.15, 0.25]
 
 # Scene 1 - Environment Light
 for alpha in alphas:
-    __scene = Scene(str(alpha))
+    scene = Scene(str(alpha))
     #reciever plane
-    __scene.append(Line(Point(-100,-75), Point(100, -75), material=Material(1.0, specularAlpha=alpha)))
+    scene.append(Line(Point(-100,-75), Point(100, -75), material=Material(1.0, specularAlpha=alpha)))
     # Occluder
-    __scene.append(Line(Point(-25,125), Point(75, 125), material=Material(1.0, specularAlpha=0.5), mask=0xf0))
+    scene.append(Line(Point(-25,125), Point(75, 125), material=Material(1.0, specularAlpha=0.5), mask=0xf0))
     #environment light
-    __scene.append(Light(radiance=0.4, mask=0xff))
-    scenes.append(__scene)
+    scene.append(Light(radiance=0.4, mask=0xff))
+    scenes.append(scene)
     
 def generatePrimaryRays(nRays):
     cameraFoucus_x = 0
