@@ -24,8 +24,7 @@ def generatePrimaryRays(nRays):
 
 def shade(scene, primaryRay, nSecondaryRays):
     (intersection, obj) = scene.intersect(primaryRay)
-    #primaryRay.draw()
-
+    primaryRay.draw()
     if not intersection.hit:
         return 0
   
@@ -60,11 +59,11 @@ def shade(scene, primaryRay, nSecondaryRays):
             shadowSamples.append(0)
             actualSamples.append(0)
 
-    plt.plot(angles, np.array(lightSamples) * 10000, label="lightsamples")
-    plt.plot(angles, shadowSamples, label="shadowsamples")
-    plt.plot(angles, formFactorSamples, label="FormFactorSamples")
-    plt.legend()
-    plt.show()
+    #plt.plot(angles, np.array(lightSamples) * 10000, label="lightsamples")
+    #plt.plot(angles, shadowSamples, label="shadowsamples")
+    #plt.plot(angles, formFactorSamples, label="FormFactorSamples")
+    #plt.legend()
+    #plt.show()
 
     return angles, shadowSamples, formFactorSamples, lightSamples, actualSamples
 
@@ -98,4 +97,4 @@ def computeCorrelations(shadowSamples, formFactorSamples, lightSamples, actualSa
     if not (np.abs(correlationTerm + approxTerm - actualTerm) < 1e-10):
         print("Incorrect caluculations")
 
-    return np.abs(correlationTerm / actualTerm) * 100, (correlationError / actualTerm) * 100
+    return np.abs(correlationTerm / actualTerm) * 100, (np.array(correlationError) / actualTerm) * 100

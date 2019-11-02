@@ -5,8 +5,35 @@ from abc import ABC, abstractmethod
 import turtle as tl
 import numpy as np
 import matplotlib.pyplot as plt
+import io
+from PIL import Image #conda install pillow, manuall install ghostscript, point Path to gs/bin/ 
 
 SCENE_BOUND = 10000.0
+
+def screenSetup(screenWidth, screenHeight, hShift, vShift, title):
+  screen = tl.Screen()
+  screen.setup(screenWidth, screenHeight)
+  screen.reset()
+  screen.setworldcoordinates(-screenWidth / 2 + hShift, -screenHeight / 2 + vShift, screenWidth / 2 + hShift, screenHeight / 2 + vShift)
+  screen.title(title)
+
+def screenshot(filename):
+    tl.hideturtle()
+    cnv = tl.getscreen().getcanvas() 
+    ps = cnv.postscript(colormode = 'color')
+    im = Image.open(io.BytesIO(ps.encode('utf-8')))
+    im.save(filename + '.png')
+
+def drawText(text, xPos, yPos, color, fontSize):
+    style = ('Arial', fontSize, 'normal')
+    pen = tl.Turtle()
+    pen.speed(0)
+    pen.hideturtle()
+    pen.color(color)
+    pen.up()
+    pen.goto(xPos, yPos)
+    pen.down()
+    pen.write(text, font=style, align="center")
 
 def rotMat(ang):
   ang = ang * np.pi / 180.0
@@ -480,8 +507,6 @@ def sample(type, nSamples):
     return (angles, np.ones(angles.shape) * 2.0 / (np.cos(angles) * nSamples))
   else:
     print("Sampler type not found")
-
-tl.Screen().title("2D Renderer")
 
 # def shade(cameraRayPayload):
 #   cameraRayPayload.camRay.draw()

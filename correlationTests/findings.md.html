@@ -1,0 +1,71 @@
+                <meta charset="utf-8" emacsmode="-*- markdown -*-">
+                            **Correlation Tests**
+
+What is the problem ?
+===============================================================================
+
+Direct illumination integral is often evaluated as product of visibility and form factor with the assumption that correlation between visibility term and form factor is negligible. We study where this assumption breaks down in more details.
+
+$I(\theta_v)$ = $\int_{-\pi/2}^{\pi/2} V(\theta F(\theta;\theta_v) L(\theta) d\theta$
+
+Here:
+* $\theta_v$ is viewing direction
+* $\theta$ is direction of incident light
+* $V(\theta)$ is binary visibility
+* $F(\theta)$ is the form factor including diffuse/glossy brdf and geometry terms
+* $L(\theta)$ is the radiance from the light source, and serve as our Pdf. Usually, $L$ is not normalized, so some adjustments are required in the evaluation of the following integral.
+
+Assuming $L(\theta)$ is normalized, the above integral can be evaluated as:
+
+I =  $E_{L}[F]E_{L}[V] + E_L[(V - E_L(V - E_L(V)))(F-E_L(F))]$
+
+where in the above equation:
+
+$E_L(X) = \int_{-\pi/2}^{\pi/2}X(\theta)L(\theta)d\theta$
+
+For simplicity, lets assume
+
+* $E_L[V] = \bar{V}$ and
+* $E_L[F] = \bar{F}$.
+
+Replacing the symbols in our integral:
+
+$I(\theta_v)$ = $\bar{F}\bar{V} + E_L((V- \bar{V})(F - \bar{F}))$
+
+Factorized representation
+-------------------------------------------------------------------------------
+
+* $I_{approx}$ = $\bar{F}\bar{V}$
+* $I_{error}$ = $E_L((V- \bar{V})(F - \bar{F}))$
+
+Some terminologies
+------------------------------------------------------------------------------
+* $i_{error}(\theta)$ = $(V(\theta;\theta_v)- \bar{V})(F(\theta) - \bar{F})L(\theta)$,
+* So, $I_{error}(\theta_v)$ = $\sum i_{error}(\theta;\theta_v)$
+
+Error with environment source, with specular $\alpha=0.1$
+==============================================================================
+
+| Scene | Error plot |
+|:-----:|:----------:|
+| ![](Test0setup.png)| ![](Test0.png) |
+| ![](Test1setup.png)| ![](Test1.png) |
+| ![](Test2setup.png)| ![](Test2.png) |
+| ![](Test3setup.png)| ![](Test3.png) |
+| ![](Test4setup.png)| ![](Test4.png) |
+
+Error with area light source, with specular $\alpha=0.1$
+==============================================================================
+
+| Scene | Error plot |
+|:-----:|:----------:|
+| ![](Test0setup.png)| ![](Test0.png) |
+| ![](Test1setup.png)| ![](Test1.png) |
+| ![](Test2setup.png)| ![](Test2.png) |
+| ![](Test3setup.png)| ![](Test3.png) |
+| ![](Test4setup.png)| ![](Test4.png) |
+
+
+
+
+<!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js"></script><script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
