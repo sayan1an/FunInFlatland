@@ -59,12 +59,6 @@ def shade(scene, primaryRay, nSecondaryRays):
             shadowSamples.append(0)
             actualSamples.append(0)
 
-    #plt.plot(angles, np.array(lightSamples) * 10000, label="lightsamples")
-    #plt.plot(angles, shadowSamples, label="shadowsamples")
-    #plt.plot(angles, formFactorSamples, label="FormFactorSamples")
-    #plt.legend()
-    #plt.show()
-
     return angles, shadowSamples, formFactorSamples, lightSamples, actualSamples
 
 def computeCorrelations(shadowSamples, formFactorSamples, lightSamples, actualSamples):

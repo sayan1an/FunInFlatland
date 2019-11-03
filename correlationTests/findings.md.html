@@ -6,13 +6,13 @@ What is the problem ?
 
 Direct illumination integral is often evaluated as product of visibility and form factor with the assumption that correlation between visibility term and form factor is negligible. We study where this assumption breaks down in more details.
 
-$I(\theta_v)$ = $\int_{-\pi/2}^{\pi/2} V(\theta F(\theta;\theta_v) L(\theta) d\theta$
+$I(\theta_v)$ = $\int_{-\pi/2}^{\pi/2} V(\theta) F(\theta;\theta_v) L(\theta) d\theta$
 
 Here:
 * $\theta_v$ is viewing direction
 * $\theta$ is direction of incident light
 * $V(\theta)$ is binary visibility
-* $F(\theta)$ is the form factor including diffuse/glossy brdf and geometry terms
+* $F(\theta;\theta_v)$ is the form factor including diffuse/glossy brdf and geometry terms
 * $L(\theta)$ is the radiance from the light source, and serve as our Pdf. Usually, $L$ is not normalized, so some adjustments are required in the evaluation of the following integral.
 
 Assuming $L(\theta)$ is normalized, the above integral can be evaluated as:
@@ -36,11 +36,11 @@ Factorized representation
 -------------------------------------------------------------------------------
 
 * $I_{approx}$ = $\bar{F}\bar{V}$
-* $I_{error}$ = $E_L((V- \bar{V})(F - \bar{F}))$
+* $I_{error}$ = $E_L[(V- \bar{V})(F - \bar{F})]$
 
 Some terminologies
 ------------------------------------------------------------------------------
-* $i_{error}(\theta)$ = $(V(\theta;\theta_v)- \bar{V})(F(\theta) - \bar{F})L(\theta)$,
+* $i_{error}(\theta)$ = $(V(\theta)- \bar{V})(F(\theta;\theta_v) - \bar{F})L(\theta)$,
 * So, $I_{error}(\theta_v)$ = $\sum i_{error}(\theta;\theta_v)$
 
 Error with environment source, with specular $\alpha=0.1$
@@ -59,12 +59,29 @@ Error with area light source, with specular $\alpha=0.1$
 
 | Scene | Error plot |
 |:-----:|:----------:|
-| ![](Test0setup.png)| ![](Test0.png) |
-| ![](Test1setup.png)| ![](Test1.png) |
-| ![](Test2setup.png)| ![](Test2.png) |
-| ![](Test3setup.png)| ![](Test3.png) |
-| ![](Test4setup.png)| ![](Test4.png) |
+| ![](Test5setup.png)| ![](Test5.png) |
+| ![](Test6setup.png)| ![](Test6.png) |
+| ![](Test7setup.png)| ![](Test7.png) |
+| ![](Test8setup.png)| ![](Test8.png) |
+| ![](Test9setup.png)| ![](Test9.png) |
+| ![](Test10setup.png)| ![](Test10.png) |
 
+Contribution of individual components
+==============================================================================
+| Scene | Error components |
+|:-----:|:----------:|
+| ![](Test11setup.png)| ![](Test11.png) |
+| ![](Test12setup.png)| ![](Test12.png) |
+| ![](Test13setup.png)| ![](Test13.png) |
+| ![](Test14setup.png)| ![](Test14.png) |
+| ![](Test15setup.png)| ![](Test15.png) |
+| ![](Test16setup.png)| ![](Test16.png) |
+
+Conclusion
+==============================================================================
+* Correlation error is maximum when light source and occluder are directly under the main brdf lobe and the light subtends a large angle at the reciver.
+* Correlation error is almost constant i.e. do not vary with viewing direction when source and occluder are far from brdf lobe. This is because $F(\theta;\theta_v) - \bar{F}$ is almost constant (non-zero) when occluder and light source are far from the main lobe 
+* Correlation error is zero when occluder and light source are not aligned. This is because V is constant (=1 over domain of light source) and can be taken out of the error term leaving only $E(F-\bar{F})$ which is zero.
 
 
 
