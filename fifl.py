@@ -58,6 +58,11 @@ class Intersectable(ABC):
   def intersect(self, ray): # Method returns an Intersection object, the normals and tangents must be unit length
       pass
 
+class Sampleable(ABC):
+  @abstractmethod
+  def sample(self, sampleArray): # Method takes as input an array of numbers between [0, 1] and returns a set of points
+      pass
+
 class CameraRayPayload:
   camRay = None
   value = None # Final radiance at screen pixel
@@ -344,7 +349,7 @@ class Material:
     else:
       return self.evalSpecular(surfNorm, viewDir, outDir) + self.evalDiffuse(surfNorm, outDir)
 
-class Line(Drawable, Intersectable):
+class Line(Drawable, Intersectable, Sampleable):
   flipNormal = None
   size = None
   color = None
@@ -414,6 +419,21 @@ class Line(Drawable, Intersectable):
         normal = normal.scale(-1)
     return Intersection(True, intersect, normal, tangent)
 
+  def sample(self, sampleArray):
+    nSamples = sampleArray.shape[0]
+
+    if (sampleArray >= 0).sum() != nSamples and (sampleArray <= 1).sum() != nSamples:
+      raise Exception("All elements of the input array should be between 0 and 1")
+
+    pointList = []
+    direction = self.end.sub(self.start)
+    
+    for i in range(0, nSamples):
+      num = sampleArray[i]
+      pointList.append(self.start.add(direction.scale(num)))
+
+    return pointList
+
 class Box(Drawable, Intersectable):
   left = None
   right = None
@@ -467,7 +487,7 @@ class Box(Drawable, Intersectable):
 
     return intersection
 
-class Light(Drawable, Intersectable):
+class Light(Drawable, Intersectable, Sampleable):
   geometry = None
   radiance = None
   # Generic constructor
@@ -486,13 +506,6 @@ class Light(Drawable, Intersectable):
     self.mask = mask  
     self.radiance = radiance
   
-  # Constructor for line emitter
-  def __init__(self,  line, radiance=1.0, mask=0xff):
-    self.geometry = Line(start=line.start, end=line.end, flipNormal=line.flipNormal)
-    self.geometry.color = "orange"
-    self.mask = mask  
-    self.radiance = radiance
-
   def draw(self):
     if self.geometry == "env" or self.geometry == "NotImplemented":
       return
@@ -513,6 +526,12 @@ class Light(Drawable, Intersectable):
       return Intersection(True, normal, tangent)
 
     return self.geometry.intersect(ray)
+  
+  def sample(self, sampleArray):
+    if self.geometry == "env":
+      raise Exception("Sampling env-light is not implemented")
+
+    return self.geometry.sample(sampleArray)
   
 class Scene(Drawable, Intersectable):
   objects = None
