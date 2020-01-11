@@ -38,6 +38,10 @@ def drawText(text, xPos, yPos, color, fontSize):
 def rotMat(ang):
   ang = ang * np.pi / 180.0
   return np.array([[np.cos(ang), np.sin(ang), 0], [-np.sin(ang), np.cos(ang), 0], [0, 0, 1]])
+def scaleMat(hScale, vScale):
+  return np.array([[hScale, 0, 0], [0, vScale, 0], [0, 0, 1]])
+def translationMat(hTrans, vTrans):
+  return np.array([[1, 0, hTrans], [0, 1, vTrans], [0, 0, 1]])
 
 # Abstract class Drawable
 # Base class for all drawable quantities
@@ -348,13 +352,13 @@ class Line(Drawable, Intersectable):
   end = None
   material = None
     
-  def __init__(self, start, end, material=Material(0.0), flipNormal=False, mask=0xff):
+  def __init__(self, start, end, material=Material(0.0), flipNormal=False, mask=0xff, drawColor="magenta"):
     self.flipNormal = flipNormal
     self.start = Point(start.pos[0], start.pos[1])
     self.end = Point(end.pos[0], end.pos[1])
     self.material = Material(material.specularColor, material.specularAlpha)
     self.size = 3
-    self.color = "magenta"
+    self.color = drawColor
     self.mask = mask
       
   def drawNormal(self):
@@ -380,6 +384,7 @@ class Line(Drawable, Intersectable):
     pen.goto(self.start.pos[0], self.start.pos[1])
     pen.down()
     pen.goto(self.end.pos[0], self.end.pos[1])
+    #self.drawNormal()
     
   def intersect(self, ray):
     if not (self.mask & ray.mask):
@@ -409,22 +414,82 @@ class Line(Drawable, Intersectable):
         normal = normal.scale(-1)
     return Intersection(True, intersect, normal, tangent)
 
+class Box(Drawable, Intersectable):
+  left = None
+  right = None
+  top = None
+  bottom = None
+  mask = None
+
+  def __init__(self,  position=Point(0,0), size=50, hScale=1.0, vScale=1.0, orientation=0, mask=0xff, drawColor="magenta"):
+    transMat = np.dot(rotMat(orientation), scaleMat(hScale, vScale))
+    transMat = np.dot(translationMat(position.pos[0], position.pos[1]), transMat)
+    
+    start = np.dot(transMat, np.array([-size/2, -size/2, 1]))
+    end = np.dot(transMat, np.array([-size/2, size/2, 1]))
+    self.left = Line(Point(start[0], start[1]), Point(end[0], end[1]), drawColor=drawColor)
+
+    start = np.dot(transMat, np.array([size/2, -size/2, 1]))
+    end = np.dot(transMat, np.array([size/2, size/2, 1]))
+    self.right = Line(Point(start[0], start[1]), Point(end[0], end[1]), flipNormal=True, drawColor=drawColor)
+
+    start = np.dot(transMat, np.array([-size/2, size/2, 1]))
+    end = np.dot(transMat, np.array([size/2, size/2, 1]))
+    self.top = Line(Point(start[0], start[1]), Point(end[0], end[1]), drawColor=drawColor)
+
+    start = np.dot(transMat, np.array([-size/2, -size/2, 1]))
+    end = np.dot(transMat, np.array([size/2, -size/2, 1]))
+    self.bottom = Line(Point(start[0], start[1]), Point(end[0], end[1]), flipNormal=True, drawColor=drawColor)
+
+    self.mask = mask
+
+  def draw(self):
+    self.left.draw()
+    self.right.draw()
+    self.top.draw()
+    self.bottom.draw()
+
+  def intersect(self, ray):
+    if not (self.mask & ray.mask):
+      return Intersection()
+
+    intersectObjList = [self.left, self.right, self.top, self.bottom]
+
+    min_t = SCENE_BOUND
+    intersection = Intersection()
+    for o in intersectObjList:
+      i = o.intersect(ray)
+      if i.hit and ray.t < min_t and ray.t > 1e-10:
+        min_t = ray.t
+        intersection = i
+    
+    ray.t = min_t
+
+    return intersection
+
 class Light(Drawable, Intersectable):
   geometry = None
   radiance = None
-  def __init__(self,  geometryString="env", position=Point(0,0), length=50, orientation=0, radiance=1.0, mask=0xff):
+  # Generic constructor
+  def __init__(self,  geometryString="env", position=Point(0,0), length=50, orientation=0, radiance=1.0, mask=0xff, drawColor="orange"):
     if geometryString == "line":
       start = np.dot(rotMat(orientation), np.array([length/2, 0, 1]))
       end = np.dot(rotMat(orientation), np.array([-length/2, 0, 1]))
       start = position.add(Point(start[0], start[1]))
       end = position.add(Point(end[0], end[1]))
-      self.geometry = Line(start, end, flipNormal=True)
-      self.geometry.color = "orange"
+      self.geometry = Line(start, end, flipNormal=True, drawColor=drawColor)
     elif geometryString == "env":
       self.geometry = "env"
     else:
       self.geometry = "NotImplemented"
 
+    self.mask = mask  
+    self.radiance = radiance
+  
+  # Constructor for line emitter
+  def __init__(self,  line, radiance=1.0, mask=0xff):
+    self.geometry = Line(start=line.start, end=line.end, flipNormal=line.flipNormal)
+    self.geometry.color = "orange"
     self.mask = mask  
     self.radiance = radiance
 
@@ -453,7 +518,7 @@ class Scene(Drawable, Intersectable):
   objects = None
   name = None
   
-  def __init__(self, name="A scence"):
+  def __init__(self, name="A scene"):
     self.objects = [] 
     self.name = name
 
