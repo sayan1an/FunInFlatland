@@ -25,7 +25,20 @@ def generateRays(light, receiver):
         i = i + 1
     return rays
 
-def spectrumTester(emitterPosition, emitterOrientation, emitterLength, emitterDensity, reciverPosition, receiverLength, receiverDensity, occluderPosition):
+def primaryToSecondaryVar(emitterPosition, emitterOrientation, emitterLength, emitterDensity, reciverPosition, receiverLength, receiverDensity, occluderPosition, occluderHScale, occluderVScale):
+    eh = np.abs(emiiterPosition.pos[0] - receiverPosition.pos[0])
+    ev = np.abs(emiiterPosition.pos[1] - receiverPosition.pos[1])
+    eTheta = emitterOrientation * np.pi / 180.0
+    oh = np.abs(occluderPosition.pos[0] - receiverPosition.pos[0])
+    ov = np.abs(occluderPosition.pos[1] - receiverPosition.pos[1])
+    oh_min = oh - occluderHScale * 50.0 / 2.0
+    oh_max = oh + occluderHScale * 50.0 / 2.0
+    ov_min = ov - occluderVScale * 50.0 / 2.0
+    ov_max = ov + occluderVScale * 50.0 / 2.0
+    return (emitterLength, eh, ev, eTheta, oh_min, oh_max, ov_min, ov_max)
+
+
+def spectrumTester(emitterPosition, emitterOrientation, emitterLength, emitterDensity, reciverPosition, receiverLength, receiverDensity, occluderPosition, occluderHScale, occluderVScale):
     sceneName = testname
     scene = Scene(sceneName)
 
@@ -40,13 +53,14 @@ def spectrumTester(emitterPosition, emitterOrientation, emitterLength, emitterDe
     #drawText("Receiver plane", 0, -380, "Black", 15)
     
     # Occluder
-    scene.append(Box(position=occluderPosition, hScale=4, vScale=4, orientation=0))
+    scene.append(Box(position=occluderPosition, hScale=occluderHScale, vScale=occluderVScale, orientation=0))
     #drawText("Occluder", -100, 10, "Black", 15)
 
+    (eL, eh, ev, eTheta, oh_min, oh_max, ov_min, ov_max) = primaryToSecondaryVar(emitterPosition, emitterOrientation, emitterLength, emitterDensity, reciverPosition, receiverLength, receiverDensity, occluderPosition, occluderHScale, occluderVScale)
     scene.draw()
 
     rays = generateRays(light, receiver)
-
+  
     scatter = []
     for ray in rays:
         (i,o) = scene.intersect(ray[2])
@@ -67,10 +81,13 @@ emitterOrientation = 90.0
 emiiterPosition = Point(-350, -350 + emitterLength / 2.0)
 receiverPosition = Point(-350 + receiverLength / 2.0, -350)
 occluderPosition = Point(-100, -100)
+occluderHScale = 4.0
+occluderVScale = 4.0
 
 for i in range(0,1):
     emiiterPosition = Point(emiiterPosition.pos[0] + i * 100, emiiterPosition.pos[1])
     tl.clearscreen()
-    spectrumTester(emiiterPosition, emitterOrientation, emitterLength, emitterDensity, receiverPosition, receiverLength, receiverDensity, occluderPosition)
+    spectrumTester(emiiterPosition, emitterOrientation, emitterLength, 
+        emitterDensity, receiverPosition, receiverLength, receiverDensity, occluderPosition, occluderHScale, occluderVScale)
 
 tl.done()
