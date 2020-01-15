@@ -22,6 +22,77 @@ def getSpectrum(primalImage):
     
     return np.abs(ftimage)
     
+def getCovarianceMat(imageMat):
+    ySize = imageMat.shape[0]
+    xSize = imageMat.shape[1]
+    
+    # construct A, I
+    A = np.zeros((xSize * ySize, 3))
+    I = np.zeros((xSize * ySize, 1))
+    mu = np.array([xSize / 2.0, ySize / 2.0]).reshape((2,1))
+
+    # Initialize
+    for x in range(xSize):
+        for y in range(ySize):
+            if imageMat[y,x] > 1e-6:
+                I[y * xSize + x] = np.log((0.0 + imageMat[y,x]) * 2 * np.pi)
+                A[y * xSize + x, 0] = 0.5* (x - mu[0])**2
+                A[y * xSize + x, 1] = (x - mu[0]) * (y - mu[1])
+                A[y * xSize + x, 2] = 0.5 * (y - mu[1])**2
+
+    A_T = np.transpose(A)
+    A_T_A_inv = np.linalg.inv(np.dot(A_T, A)) + np.eye(3) * 0.0001
+    det_sigma_inv = 1
+
+    # Iterative solve
+    for i in range(2):
+        # Add the correction factor
+        I_iter = I - 0.5 * np.log(det_sigma_inv)
+        A_T_I = np.dot(A_T, I_iter)
+        s = -np.dot(A_T_A_inv, A_T_I)
+        # Update determinant
+        det_sigma_inv = s[0] * s[2] - s[1] * s[1]
+        print(det_sigma_inv)
+  
+    cov_inv = np.zeros((2,2))
+    cov_inv[0, 0] = s[0]
+    cov_inv[1, 1] = s[2]
+    cov_inv[0, 1] = cov_inv[1, 0] = s[1]
+
+    return np.linalg.inv(cov_inv)
+
+def getCovarianceMatEmperical(imageMat):
+    ySize = imageMat.shape[0]
+    xSize = imageMat.shape[1]
+        
+    mu = np.array([xSize / 2.0, ySize / 2.0]).reshape((2,1))
+    powerAvailable = np.sum(imageMat**2)
+
+    sigmaSq_x = 0
+    sigmaSq_y = 0
+    sigmaSq_xy = 0
+    total = 0
+    powerUsed = 0
+    for x in range(xSize):
+        for y in range(ySize):
+            if imageMat[y, x] > 0.025:
+                total = total +  imageMat[y, x]
+                powerUsed = powerUsed + imageMat[y, x]**2
+                sigmaSq_x = sigmaSq_x + imageMat[y, x] * (x - mu[0])**2
+                sigmaSq_y = sigmaSq_y + imageMat[y, x] * (y - mu[1])**2
+                sigmaSq_xy = sigmaSq_xy + imageMat[y, x] * (x - mu[0]) * (y - mu[1])
+
+    sigmaSq_x = sigmaSq_x / total
+    sigmaSq_y = sigmaSq_y / total
+    sigmaSq_xy = sigmaSq_xy / total
+
+    print(powerUsed/powerAvailable)
+    covMat = np.array([sigmaSq_x, sigmaSq_xy, sigmaSq_xy, sigmaSq_y]).reshape((2,2))
+
+    print(np.linalg.eig(covMat))
+    return np.array([sigmaSq_x, sigmaSq_xy, sigmaSq_xy, sigmaSq_y]).reshape((2,2))
+    
+
 def generateRays(light, receiver):
     rayEndPoints = light.sample(np.arange(0.0001, 1, 1.0 / float(emitterLength * emitterDensity)))
     rayOrigins = receiver.sample(np.arange(0.0001, 1.0, 1.0 / float(receiverLength * receiverDensity)))
@@ -110,7 +181,7 @@ occluderPosition = Point(-100, -100)
 occluderHScale = 4.0
 occluderVScale = 4.0
 
-for i in range(0,4):
+for i in range(0,1):
     emiiterPosition = Point(emiiterPosition.pos[0] + 100, emiiterPosition.pos[1])
     tl.clearscreen()
     primalVisibilityData, nReceiverSamples = primalVisibility(emiiterPosition, emitterOrientation, emitterLength, 
@@ -133,8 +204,11 @@ for i in range(0,4):
     
     plt.savefig(folder  + "primal_" + str(i) + ".png")
     saveImage(folder + "primal_pil_" + str(i) + ".bmp", primalImage)
-    saveImage(folder + "spectral_pil_" + str(i) + ".bmp", getSpectrum(primalImage))
-
+    spectrum = getSpectrum(primalImage)
+    spectrum_modified = spectrum / np.max(spectrum)
+    saveImage(folder + "spectral_pil_" + str(i) + ".bmp", spectrum_modified)
+    saveImage(folder + "spectral_pil_log_" + str(i) + ".bmp", np.log(1 + spectrum_modified))
+    print(getCovarianceMatEmperical(spectrum_modified))
 
 
 print("Finished")
