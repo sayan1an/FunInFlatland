@@ -240,7 +240,7 @@ def runExperiment(experimentSeriesName, experimentIndex, emiiterPosition, emitte
     plt.savefig(experimentSeriesName + "_spectral_" + str(experimentIndex) + ".png")
     plt.close()
 
-def generateVideo(preName, numFiles):
+def readFrames(preName, numFiles):
     img_array = []
     for i in range(numFiles):
         filename = preName + str(i) + ".png"
@@ -248,13 +248,14 @@ def generateVideo(preName, numFiles):
         height, width, layers = img.shape
         size = (width,height)
         img_array.append(img)
- 
-    out = cv2.VideoWriter(preName[:-1] + '.avi',cv2.VideoWriter_fourcc(*'DIVX'), 4, size)
- 
-    for i in range(len(img_array)):
-        out.write(img_array[i])
-    out.release()
-
+    
+    return img_array, size
+    
+def hconcat_resize_min(im_list, interpolation=cv2.INTER_CUBIC):
+    h_min = min(im.shape[0] for im in im_list)
+    im_list_resize = [cv2.resize(im, (int(im.shape[1] * h_min / im.shape[0]), h_min), interpolation=interpolation)
+                      for im in im_list]
+    return cv2.hconcat(im_list_resize)
 
 def generateVideos(expSeriesName):
     checkNumFileScene = 0
@@ -272,10 +273,18 @@ def generateVideos(expSeriesName):
         print("Image files are not discovered correctly!")
         return
 
-    generateVideo(expSeriesName + "_scene_", checkNumFileScene)
-    generateVideo(expSeriesName + "_primal_", checkNumFileScene)
-    generateVideo(expSeriesName + "_spectral_", checkNumFileScene)
+    sceneFrames, sceneSize = readFrames(expSeriesName + "_scene_", checkNumFileScene)
+    primalFrames, primalSize = readFrames(expSeriesName + "_primal_", checkNumFileScene)
+    spectralFrames, spectralSize = readFrames(expSeriesName + "_spectral_", checkNumFileScene)
     
+    im_h_resize = hconcat_resize_min([sceneFrames[0], primalFrames[0], spectralFrames[0]])
+    out = cv2.VideoWriter(expSeriesName + '.avi',cv2.VideoWriter_fourcc(*'DIVX'), 4, (im_h_resize.shape[1], im_h_resize.shape[0]))
+ 
+    for i in range(checkNumFileScene):
+        im_h_resize = hconcat_resize_min([sceneFrames[i], primalFrames[i], spectralFrames[i]])
+        out.write(im_h_resize)
+
+    out.release()
 
 experimentSeriesName = "results/emitterTrans"
 _emitterLength = 1000
