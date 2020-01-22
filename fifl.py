@@ -10,12 +10,13 @@ from PIL import Image #conda install pillow, manuall install ghostscript, point 
 
 SCENE_BOUND = 10000.0
 
-def screenSetup(screenWidth, screenHeight, hShift, vShift, title):
+def screenSetup(screenWidth, screenHeight, hShift, vShift, title, drawZoom=1.0):
   screen = tl.Screen()
   screen.setup(screenWidth, screenHeight)
   screen.reset()
   screen.setworldcoordinates(-screenWidth / 2 + hShift, -screenHeight / 2 + vShift, screenWidth / 2 + hShift, screenHeight / 2 + vShift)
   screen.title(title)
+  Drawable.drawZoom = drawZoom
 
 def screenshot(filename):
     tl.hideturtle()
@@ -46,6 +47,7 @@ def translationMat(hTrans, vTrans):
 # Abstract class Drawable
 # Base class for all drawable quantities
 class Drawable(ABC):
+  drawZoom = 1.0 # class or static variable
   @abstractmethod
   def draw(self):
         pass
@@ -133,10 +135,10 @@ class Vector(Point):
     pen.width(self.size)
     pen.color(self.color)
     pen.up()
-    pen.goto(self.origin.pos[0], self.origin.pos[1])
+    pen.goto(self.origin.pos[0] * Drawable.drawZoom, self.origin.pos[1] * Drawable.drawZoom)
     pen.down()
     pen.setheading(np.angle([self.pos[0] + self.pos[1] * 1.0j], deg=True))
-    pen.forward(self.t)
+    pen.forward(self.t * Drawable.drawZoom)
  
   def scale(self, vec):
     v = super().scale(vec)
@@ -386,9 +388,9 @@ class Line(Drawable, Intersectable, Sampleable):
     pen.width(self.size)
     pen.color(self.color)
     pen.up()
-    pen.goto(self.start.pos[0], self.start.pos[1])
+    pen.goto(self.start.pos[0] * Drawable.drawZoom, self.start.pos[1] * Drawable.drawZoom)
     pen.down()
-    pen.goto(self.end.pos[0], self.end.pos[1])
+    pen.goto(self.end.pos[0] * Drawable.drawZoom, self.end.pos[1] * Drawable.drawZoom)
     #self.drawNormal()
     
   def intersect(self, ray):

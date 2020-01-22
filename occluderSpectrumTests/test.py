@@ -6,12 +6,13 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 import cv2
 import glob
+import sys
 from PIL import Image
 
 testname = "OccluderSpectrumTest"
 
-#screenWidth, screenHeight, center horizontalShift, center vertical shift
-screenSetup(800, 800, 0, 0, testname)
+#screenWidth, screenHeight, center horizontalShift, center vertical shift, drawZoom
+screenSetup(800, 800, 0, 0, testname, 0.5)
 
 def saveImage(name, primalImage):
     formatted = (primalImage * 255 / np.max(primalImage)).astype('uint8')
@@ -92,17 +93,21 @@ def getCovarianceMatEmperical(in_imageMat):
                     sigmaSq_x = sigmaSq_x + clippedImageMat[y, x] * (x - mu[0])**2
                     sigmaSq_y = sigmaSq_y + clippedImageMat[y, x] * (y - mu[1])**2
                     sigmaSq_xy = sigmaSq_xy + clippedImageMat[y, x] * (x - mu[0]) * (y - mu[1])
-            
+                        
             sigmaSq_x = sigmaSq_x / total
             sigmaSq_y = sigmaSq_y / total
             sigmaSq_xy = sigmaSq_xy / total
-
+            #print(sigmaSq_x)
+            #print(sigmaSq_y)
+            #print(sigmaSq_xy)
+            #argmax = np.unravel_index(np.argmax(clippedImageMat, axis=None), clippedImageMat.shape)
+            #print(clippedImageMat[argmax])
             break
 
        
     covMat = np.array([sigmaSq_x, sigmaSq_xy, sigmaSq_xy, sigmaSq_y]).reshape((2,2))
     eigVal, eigVec = np.linalg.eig(covMat)
-
+  
     firstPrincipalAxis = 0
     secondPrincipalAxis = 1
     if eigVal[1] > eigVal[0]:
@@ -113,9 +118,8 @@ def getCovarianceMatEmperical(in_imageMat):
     stdMinor = np.sqrt(eigVal[secondPrincipalAxis])
 
     eigVecMajor = eigVec[:, firstPrincipalAxis]
-    
-
-    return stdMajor, stdMinor, np.arccos(eigVecMajor[0]) * 180 / np.pi
+  
+    return stdMajor, stdMinor, np.arccos(np.abs(eigVecMajor[0]) * np.sign(eigVecMajor[0] * eigVecMajor[1])) * 180 / np.pi
     
 
 def generateRays(light, receiver, emitterLength, emitterDensity, receiverLength, receiverDensity):
@@ -286,23 +290,135 @@ def generateVideos(expSeriesName):
 
     out.release()
 
-experimentSeriesName = "results/emitterTrans"
+# experimentSeriesName = "results/emitterTrans_h"
+# _emitterLength = 1000
+# _receiverLength = 1000
+# _emitterDensity = 0.05
+# _receiverDensity = 0.05
+# _emitterOrientation = 0.0
+# _receiverPosition = Point(0, -_receiverLength / 2)
+# _occluderPosition = Point(0, -100)
+# _occluderHScale = 4.0
+# _occluderVScale = 4.0
+
+# i = 0
+# for xEmitterPos in np.arange(-_emitterLength * 1.5, _emitterLength * 1.5, 5):
+#     new_emiiterPosition = Point(xEmitterPos, _emitterLength / 2)
+#     runExperiment(experimentSeriesName, i, new_emiiterPosition, _emitterOrientation, _emitterLength, _emitterDensity, _receiverPosition, _receiverLength, _receiverDensity, _occluderPosition, _occluderHScale, _occluderVScale)
+#     i = i + 1
+#     #sys.exit()
+# generateVideos(experimentSeriesName)
+
+# experimentSeriesName = "results/emitterTrans_v0"
+# _emitterLength = 1000
+# _receiverLength = 1000
+# _emitterDensity = 0.05
+# _receiverDensity = 0.05
+# _emitterOrientation = 0.0
+# _receiverPosition = Point(0, -_receiverLength / 2)
+# _occluderPosition = Point(0, -100)
+# _occluderHScale = 4.0
+# _occluderVScale = 4.0
+
+# i = 0
+# for yEmitterPos in np.arange(120, _emitterLength * 2, 5):
+#     new_emiiterPosition = Point(0, yEmitterPos)
+#     runExperiment(experimentSeriesName, i, new_emiiterPosition, _emitterOrientation, _emitterLength, _emitterDensity, _receiverPosition, _receiverLength, _receiverDensity, _occluderPosition, _occluderHScale, _occluderVScale)
+#     i = i + 1
+# generateVideos(experimentSeriesName)
+
+# experimentSeriesName = "results/emitterTrans_v1"
+# _emitterLength = 1000
+# _receiverLength = 1000
+# _emitterDensity = 0.05
+# _receiverDensity = 0.05
+# _emitterOrientation = 0.0
+# _receiverPosition = Point(0, -_receiverLength / 2)
+# _occluderPosition = Point(0, -100)
+# _occluderHScale = 4.0
+# _occluderVScale = 4.0
+
+# i = 0
+# for yEmitterPos in np.arange(120, _emitterLength * 2, 5):
+#     new_emiiterPosition = Point(_emitterLength / 2, yEmitterPos)
+#     runExperiment(experimentSeriesName, i, new_emiiterPosition, _emitterOrientation, _emitterLength, _emitterDensity, _receiverPosition, _receiverLength, _receiverDensity, _occluderPosition, _occluderHScale, _occluderVScale)
+#     i = i + 1
+# generateVideos(experimentSeriesName)
+
+# experimentSeriesName = "results/emitterTrans_v2"
+# _emitterLength = 1000
+# _receiverLength = 1000
+# _emitterDensity = 0.05
+# _receiverDensity = 0.05
+# _emitterOrientation = 0.0
+# _receiverPosition = Point(0, -_receiverLength / 2)
+# _occluderPosition = Point(0, -100)
+# _occluderHScale = 4.0
+# _occluderVScale = 4.0
+
+# i = 0
+# for yEmitterPos in np.arange(120, _emitterLength * 2, 5):
+#     new_emiiterPosition = Point(_emitterLength * 1, yEmitterPos)
+#     runExperiment(experimentSeriesName, i, new_emiiterPosition, _emitterOrientation, _emitterLength, _emitterDensity, _receiverPosition, _receiverLength, _receiverDensity, _occluderPosition, _occluderHScale, _occluderVScale)
+#     i = i + 1
+# generateVideos(experimentSeriesName)
+
+experimentSeriesName = "results/emitterTrans_h_o90"
 _emitterLength = 1000
 _receiverLength = 1000
 _emitterDensity = 0.05
 _receiverDensity = 0.05
-_emitterOrientation = 90.0
-_emiiterPosition = Point(-350, -350 + _emitterLength / 2.0)
-_receiverPosition = Point(-350 + _receiverLength / 2.0, -350)
-_occluderPosition = Point(-100, -100)
+_emitterPosition = Point(-_emitterLength * 0.5, _emitterLength / 12)
+_emitterOrientation = -90.0
+_receiverPosition = Point(0, -_receiverLength / 2)
+_occluderPosition = Point(-200, -200)
 _occluderHScale = 4.0
 _occluderVScale = 4.0
 
-for i in range(0,40):
-    new_emiiterPosition = Point(_emiiterPosition.pos[0] + i * 5, _emiiterPosition.pos[1])
+i = 0
+for xEmitterPos in np.arange(-_emitterLength * 0.5-10, -_emitterLength * 1.5, -5):
+    new_emiiterPosition = Point(xEmitterPos, _emitterPosition.pos[1])
     runExperiment(experimentSeriesName, i, new_emiiterPosition, _emitterOrientation, _emitterLength, _emitterDensity, _receiverPosition, _receiverLength, _receiverDensity, _occluderPosition, _occluderHScale, _occluderVScale)
-
+    i = i + 1
 generateVideos(experimentSeriesName)
+
+# experimentSeriesName = "results/emitterTrans_v_o90"
+# _emitterLength = 1000
+# _receiverLength = 1000
+# _emitterDensity = 0.05
+# _receiverDensity = 0.05
+# _emitterPosition = Point(-_emitterLength * 0.5-10, _emitterLength / 12)
+# _emitterOrientation = -90.0
+# _receiverPosition = Point(0, -_receiverLength / 2)
+# _occluderPosition = Point(-200, 100)
+# _occluderHScale = 4.0
+# _occluderVScale = 4.0
+
+# i = 0
+# for yEmitterPos in np.arange(_emitterLength / 16, _emitterLength * 1.5, 5):
+#     new_emiiterPosition = Point(_emitterPosition.pos[0], yEmitterPos)
+#     runExperiment(experimentSeriesName, i, new_emiiterPosition, _emitterOrientation, _emitterLength, _emitterDensity, _receiverPosition, _receiverLength, _receiverDensity, _occluderPosition, _occluderHScale, _occluderVScale)
+#     i = i + 1
+# generateVideos(experimentSeriesName)
+
+# experimentSeriesName = "results/emitterRot_v0"
+# _emitterLength = 1000
+# _receiverLength = 1000
+# _emitterDensity = 0.05
+# _receiverDensity = 0.05
+# _emitterPosition = Point(-_emitterLength * 0.5, _emitterLength / 4)
+# _emitterOrientation = 0.0
+# _receiverPosition = Point(0, -_receiverLength / 2)
+# _occluderPosition = Point(-200, 0)
+# _occluderHScale = 4.0
+# _occluderVScale = 4.0
+
+# i = 0
+# for emitterOrientation in np.arange(0, -90.05, -0.5):
+#     runExperiment(experimentSeriesName, i, _emitterPosition, emitterOrientation, _emitterLength, _emitterDensity, _receiverPosition, _receiverLength, _receiverDensity, _occluderPosition, _occluderHScale, _occluderVScale)
+#     i = i + 1
+# generateVideos(experimentSeriesName)
+
 
 print("Finished")
 #tl.done()
