@@ -8,6 +8,7 @@ import cv2
 import glob
 import sys
 from PIL import Image
+from scipy.interpolate import interp1d
 
 testname = "OccluderSpectrumTest"
 
@@ -363,24 +364,24 @@ def generateVideos(expSeriesName):
 #     i = i + 1
 # generateVideos(experimentSeriesName)
 
-experimentSeriesName = "results/emitterTrans_h_o90"
-_emitterLength = 1000
-_receiverLength = 1000
-_emitterDensity = 0.05
-_receiverDensity = 0.05
-_emitterPosition = Point(-_emitterLength * 0.5, _emitterLength / 12)
-_emitterOrientation = -90.0
-_receiverPosition = Point(0, -_receiverLength / 2)
-_occluderPosition = Point(-200, -200)
-_occluderHScale = 4.0
-_occluderVScale = 4.0
+# experimentSeriesName = "results/emitterTrans_h_o90"
+# _emitterLength = 1000
+# _receiverLength = 1000
+# _emitterDensity = 0.05
+# _receiverDensity = 0.05
+# _emitterPosition = Point(-_emitterLength * 0.5, _emitterLength / 12)
+# _emitterOrientation = -90.0
+# _receiverPosition = Point(0, -_receiverLength / 2)
+# _occluderPosition = Point(-200, -200)
+# _occluderHScale = 4.0
+# _occluderVScale = 4.0
 
-i = 0
-for xEmitterPos in np.arange(-_emitterLength * 0.5-10, -_emitterLength * 1.5, -5):
-    new_emiiterPosition = Point(xEmitterPos, _emitterPosition.pos[1])
-    runExperiment(experimentSeriesName, i, new_emiiterPosition, _emitterOrientation, _emitterLength, _emitterDensity, _receiverPosition, _receiverLength, _receiverDensity, _occluderPosition, _occluderHScale, _occluderVScale)
-    i = i + 1
-generateVideos(experimentSeriesName)
+# i = 0
+# for xEmitterPos in np.arange(-_emitterLength * 0.5-10, -_emitterLength * 1.5, -5):
+#     new_emiiterPosition = Point(xEmitterPos, _emitterPosition.pos[1])
+#     runExperiment(experimentSeriesName, i, new_emiiterPosition, _emitterOrientation, _emitterLength, _emitterDensity, _receiverPosition, _receiverLength, _receiverDensity, _occluderPosition, _occluderHScale, _occluderVScale)
+#     i = i + 1
+# generateVideos(experimentSeriesName)
 
 # experimentSeriesName = "results/emitterTrans_v_o90"
 # _emitterLength = 1000
@@ -419,6 +420,124 @@ generateVideos(experimentSeriesName)
 #     i = i + 1
 # generateVideos(experimentSeriesName)
 
+# experimentSeriesName = "results/emitterRot_v1"
+# _emitterLength = 1000
+# _receiverLength = 1000
+# _emitterDensity = 0.05
+# _receiverDensity = 0.05
+# _receiverPosition = Point(0, -_receiverLength / 2)
+# _occluderPosition = Point(0, -250)
+# _occluderHScale = 4.0
+# _occluderVScale = 4.0
+
+# startDegrees = 10
+# startTheta = startDegrees * np.pi / 180
+# endTheta = (180 - startDegrees) * np.pi / 180
+# orientationLamda = interp1d([startTheta, startTheta/2 + np.pi/4, np.pi/2, endTheta/2 + np.pi/4, endTheta], [90, 45, 0, -45, -90], kind="cubic")
+
+# i = 0
+# for theta in np.arange(startTheta, endTheta, np.pi / 180):
+#     distance = 600
+#     new_emiiterPosition = Point(distance * np.cos(theta), distance * np.sin(theta))
+#     orientation = orientationLamda(theta)
+#     runExperiment(experimentSeriesName, i, new_emiiterPosition, orientation, _emitterLength, _emitterDensity, _receiverPosition, _receiverLength, _receiverDensity, _occluderPosition, _occluderHScale, _occluderVScale)
+#     i = i + 1
+#     #sys.exit()
+# generateVideos(experimentSeriesName)
+
+
+# experimentSeriesName = "results/occluderTrans_h"
+# _emitterLength = 1000
+# _receiverLength = 1000
+# _emitterDensity = 0.05
+# _receiverDensity = 0.05
+# _emitterPosition = Point(-425,425)
+# _emitterOrientation = -45.0
+# _receiverPosition = Point(0, -_receiverLength / 2)
+# _occluderHScale = 4.0
+# _occluderVScale = 4.0
+
+# i = 0
+# for xOccluder in np.arange(-_receiverLength / 2, _receiverLength / 2, 5):
+#     new_occluderPosition = Point(xOccluder, -250)
+#     runExperiment(experimentSeriesName, i, _emitterPosition, _emitterOrientation, _emitterLength, _emitterDensity, _receiverPosition, _receiverLength, _receiverDensity, new_occluderPosition, _occluderHScale, _occluderVScale)
+#     i = i + 1
+#     #sys.exit()
+# generateVideos(experimentSeriesName)
+
+# experimentSeriesName = "results/occluderTrans_v0"
+# _emitterLength = 1000
+# _receiverLength = 1000
+# _emitterDensity = 0.05
+# _receiverDensity = 0.05
+# _emitterPosition = Point(-425,425)
+# _emitterOrientation = -45.0
+# _receiverPosition = Point(0, -_receiverLength / 2)
+# _occluderHScale = 4.0
+# _occluderVScale = 4.0
+
+# i = 0
+# for yOccluder in np.arange(-250, -250 + _emitterLength, 5):
+#     new_occluderPosition = Point(0, yOccluder)
+#     runExperiment(experimentSeriesName, i, _emitterPosition, _emitterOrientation, _emitterLength, _emitterDensity, _receiverPosition, _receiverLength, _receiverDensity, new_occluderPosition, _occluderHScale, _occluderVScale)
+#     i = i + 1
+#     #sys.exit()
+# generateVideos(experimentSeriesName)
+
+# experimentSeriesName = "results/occluderTrans_v1"
+# _emitterLength = 1000
+# _receiverLength = 1000
+# _emitterDensity = 0.05
+# _receiverDensity = 0.05
+# _emitterPosition = Point(-425,425)
+# _emitterOrientation = -45.0
+# _receiverPosition = Point(0, -_receiverLength / 2)
+# _occluderHScale = 4.0
+# _occluderVScale = 4.0
+
+# i = 0
+# for yOccluder in np.arange(-350, -350 + _emitterLength / 1.5, 5):
+#     new_occluderPosition = Point(-200, yOccluder)
+#     runExperiment(experimentSeriesName, i, _emitterPosition, _emitterOrientation, _emitterLength, _emitterDensity, _receiverPosition, _receiverLength, _receiverDensity, new_occluderPosition, _occluderHScale, _occluderVScale)
+#     i = i + 1
+#     #sys.exit()
+# generateVideos(experimentSeriesName)
+
+experimentSeriesName = "results/occluderScale_h"
+_emitterLength = 1000
+_receiverLength = 1000
+_emitterDensity = 0.05
+_receiverDensity = 0.05
+_emitterPosition = Point(-425,425)
+_emitterOrientation = -45.0
+_receiverPosition = Point(0, -_receiverLength / 2)
+_occluderPosition = Point(0, -350)
+_occluderVScale = 4.0
+
+i = 0
+for hScale in np.arange(0.5, 10, 0.1):
+    runExperiment(experimentSeriesName, i, _emitterPosition, _emitterOrientation, _emitterLength, _emitterDensity, _receiverPosition, _receiverLength, _receiverDensity, _occluderPosition, hScale, _occluderVScale)
+    i = i + 1
+    #sys.exit()
+generateVideos(experimentSeriesName)
+
+experimentSeriesName = "results/occluderScale_v"
+_emitterLength = 1000
+_receiverLength = 1000
+_emitterDensity = 0.05
+_receiverDensity = 0.05
+_emitterPosition = Point(-425,425)
+_emitterOrientation = -45.0
+_receiverPosition = Point(0, -_receiverLength / 2)
+_occluderPosition = Point(-200, 0)
+_occluderHScale = 4.0
+
+i = 0
+for vScale in np.arange(0.5, 10, 0.1):
+    runExperiment(experimentSeriesName, i, _emitterPosition, _emitterOrientation, _emitterLength, _emitterDensity, _receiverPosition, _receiverLength, _receiverDensity, _occluderPosition, _occluderHScale, vScale)
+    i = i + 1
+    #sys.exit()
+generateVideos(experimentSeriesName)
 
 print("Finished")
 #tl.done()
