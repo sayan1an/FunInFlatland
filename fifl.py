@@ -7,25 +7,32 @@ import numpy as np
 import matplotlib.pyplot as plt
 import io
 from PIL import Image #conda install pillow, manuall install ghostscript, point Path to gs/bin/ 
+import multiprocessing
 
 SCENE_BOUND = 10000.0
+lock = multiprocessing.RLock()
 
 def screenSetup(screenWidth, screenHeight, hShift, vShift, title, drawZoom=1.0):
-  screen = tl.Screen()
-  screen.setup(screenWidth, screenHeight)
-  screen.reset()
-  screen.setworldcoordinates(-screenWidth / 2 + hShift, -screenHeight / 2 + vShift, screenWidth / 2 + hShift, screenHeight / 2 + vShift)
-  screen.title(title)
-  Drawable.drawZoom = drawZoom
+    lock.acquire() 
+    screen = tl.Screen()
+    screen.setup(screenWidth, screenHeight)
+    screen.reset()
+    screen.setworldcoordinates(-screenWidth / 2 + hShift, -screenHeight / 2 + vShift, screenWidth / 2 + hShift, screenHeight / 2 + vShift)
+    screen.title(title)
+    Drawable.drawZoom = drawZoom
+    lock.release()
 
 def screenshot(filename):
+    lock.acquire()
     tl.hideturtle()
     cnv = tl.getscreen().getcanvas() 
     ps = cnv.postscript(colormode = 'color')
     im = Image.open(io.BytesIO(ps.encode('utf-8')))
     im.save(filename + '.png')
+    lock.release()
 
 def drawText(text, xPos, yPos, color, fontSize):
+    lock.acquire()
     style = ('Arial', fontSize, 'normal')
     pen = tl.Turtle()
     pen.speed(0)
@@ -35,6 +42,7 @@ def drawText(text, xPos, yPos, color, fontSize):
     pen.goto(xPos, yPos)
     pen.down()
     pen.write(text, font=style, align="center")
+    lock.release()
 
 def rotMat(ang):
   ang = ang * np.pi / 180.0
@@ -102,6 +110,7 @@ class Point(Drawable):
       return np.sqrt(self.pos[0]**2 + self.pos[1]**2)
 
   def draw(self):
+    lock.acquire()
     pen = tl.Turtle()
     pen.speed(0)
     pen.hideturtle()
@@ -111,6 +120,7 @@ class Point(Drawable):
     pen.goto(self.pos[0], self.pos[1])
     pen.down()
     pen.dot()
+    lock.release()
 
 class Vector(Point):
   t = None
@@ -129,6 +139,7 @@ class Vector(Point):
       self.t = 50
 
   def draw(self):
+    lock.acquire()
     pen = tl.Turtle()
     pen.speed(0)
     pen.shape("classic")
@@ -139,6 +150,7 @@ class Vector(Point):
     pen.down()
     pen.setheading(np.angle([self.pos[0] + self.pos[1] * 1.0j], deg=True))
     pen.forward(self.t * Drawable.drawZoom)
+    lock.release()
  
   def scale(self, vec):
     v = super().scale(vec)
@@ -382,6 +394,7 @@ class Line(Drawable, Intersectable, Sampleable):
     normal.draw()
 
   def draw(self):
+    lock.acquire()
     pen = tl.Turtle()
     pen.speed(0)
     pen.hideturtle()
@@ -392,6 +405,7 @@ class Line(Drawable, Intersectable, Sampleable):
     pen.down()
     pen.goto(self.end.pos[0] * Drawable.drawZoom, self.end.pos[1] * Drawable.drawZoom)
     #self.drawNormal()
+    lock.release()
     
   def intersect(self, ray):
     if not (self.mask & ray.mask):

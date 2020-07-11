@@ -1,0 +1,95 @@
+                <meta charset="utf-8" emacsmode="-*- markdown -*-">
+                            **Occluder spectrum tests**
+
+The setup
+===============================================================================
+![](results/testSetup.png)
+
+Visibility at a shading point
+-------------------------------------------------------------------------------
+$L(t) = \int_XV(x,t)dx$
+
+* Computed using sampling - regualr and MC over several time steps.
+* Goal here is to reconstruct each frame from a moving window of frames.
+
+Regular
+-------------------------------------------------------------------------------
+![](results/coherent.mp4)
+
+Monte Carlo
+-------------------------------------------------------------------------------
+![](results/random.mp4)
+
+Convergence of Regular vs Monte Carlo over a fixed window
+===============================================================================
+
+* We assume the integrand is not changing over time.
+* Each entry in the table is generated from 20 independent tests.
+* In the regular case, different seed is used to generate the random pattern for each test. The seed is not changed across frames, only across test.
+* In the random case, each frame is generated using independently drawn random samples from uniform distribution.
+* Reference value for the above integral is a constant 0.181818 
+
+Window Size | Sample Count | Mean | Std error
+------------|--------------|------|--------
+10          | 10           | 0.18 |  0.0126 
+10          | 10           |0.178 |  0.0121 
+10          | 10           |0.181 |  0.0117
+10          | 20           |0.183 |  0.00731
+10          | 20           |0.180 |  0.00844
+10          | 30           |0.183 |  0.00646
+10          | 30           |0.183 |  0.00564
+10          | 40           |0.182 |  0.00708
+10          | 40           |0.181 |  0.00719
+10          | 40           |0.179 |  0.00744
+10          | 80           |0.183 |  0.00404
+10          | 80           |0.181 |  0.00547
+10          | 160          |0.180 |  0.00226
+10          | 160          |0.182 |  0.00315
+10          | 20           |0.185 |  0.00652
+10          | 20           |0.183 |  0.00926
+20          | 20           |0.181 |  0.00364
+20          | 20           |0.182 |  0.00485
+40          | 20           |0.182 |  0.00294
+40          | 20           |0.182 |  0.00308
+[Regular]
+
+Window Size | Sample Count | Mean | Std error
+------------|--------------|------|--------
+10          | 10           |0.178 |  0.0257 
+10          | 10           |0.186 |  0.0352 
+10          | 10           |0.182 |  0.0414
+10          | 20           |0.173 |  0.0223
+10          | 20           |0.171 |  0.0260
+10          | 20           |0.195 |  0.0248
+10          | 30           |0.178 |  0.0215
+10          | 30           |0.179 |  0.0252
+10          | 30           |0.175 |  0.0210
+10          | 40           |0.191 |  0.0167
+10          | 40           |0.172 |  0.0151
+10          | 80           |0.183 |  0.0122
+10          | 80           |0.186 |  0.0134
+10          | 160          |0.180 |  0.0122
+10          | 160          |0.183 |  0.00698
+10          | 160          |0.181 |  0.0107
+20          | 20           |0.184 |  0.0216
+20          | 20           |0.186 |  0.0212
+40          | 20           |0.181 |  0.0131
+40          | 20           |0.181 |  0.0151
+[Monte Carlo]
+
+![Error plot - Fixed widow size](results/plotFixedWindow.png)
+![Error plot - Fixed sample size](results/plotFixedSample.png)
+
+Conclusion
+-------------------------------------------------------------------------------
+* Convergence of Regular sampling is better than MC sampling
+* Increasing widow size is more effective than increasing number of samples.
+
+Reconstruction of dynamic scene
+===============================================================================
+![](results/movingOccluder.mp4)
+
+
+
+
+<!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js"></script><script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
