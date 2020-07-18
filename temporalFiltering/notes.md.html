@@ -1,7 +1,7 @@
                 <meta charset="utf-8" emacsmode="-*- markdown -*-">
                             **Occluder spectrum tests**
 
-The setup
+Problem setup
 ===============================================================================
 ![](results/testSetup.png)
 
@@ -9,24 +9,27 @@ Visibility at a shading point
 -------------------------------------------------------------------------------
 $L(t) = \int_XV(x,t)dx$
 
-* Computed using sampling - regualr and MC over several time steps.
+* Computed using sampling - Coherent and MC over several time steps.
 * Goal here is to reconstruct each frame from a moving window of frames.
 
-Regular
+Problem Setup for static scene
+================================================================================
+
+Coherent sampling
 -------------------------------------------------------------------------------
 ![](results/coherent.mp4)
 
-Monte Carlo
+Monte Carlo sampling
 -------------------------------------------------------------------------------
 ![](results/random.mp4)
 
-Convergence of Regular vs Monte Carlo over a fixed window
+Convergence of Coherent vs Monte Carlo over a fixed window
 ===============================================================================
 
 * We assume the integrand is not changing over time.
 * Each entry in the table is generated from 20 independent tests.
-* In the regular case, different seed is used to generate the random pattern for each test. The seed is not changed across frames, only across test.
-* In the random case, each frame is generated using independently drawn random samples from uniform distribution.
+* In the Coherent case, different seed is used to generate the random pattern for each test. The seed is not changed across frames, only across test.
+* In the MC case, each frame is generated using independently drawn random samples from uniform distribution.
 * Reference value for the above integral is a constant 0.181818 
 
 Window Size | Sample Count | Mean | Std error
@@ -51,7 +54,7 @@ Window Size | Sample Count | Mean | Std error
 20          | 20           |0.182 |  0.00485
 40          | 20           |0.182 |  0.00294
 40          | 20           |0.182 |  0.00308
-[Regular]
+[Coherent]
 
 Window Size | Sample Count | Mean | Std error
 ------------|--------------|------|--------
@@ -82,14 +85,46 @@ Window Size | Sample Count | Mean | Std error
 
 Conclusion
 -------------------------------------------------------------------------------
-* Convergence of Regular sampling is better than MC sampling
+* Convergence of Coherent sampling is better than MC sampling
 * Increasing widow size is more effective than increasing number of samples.
 
-Reconstruction of dynamic scene
+Problem setup for dynamic scene
 ===============================================================================
-![](results/movingOccluder.mp4)
 
+Coherent sampling
+-------------------------------------------------------------------------------
+![](results/movingOccluder_s.mp4)
 
+Static sampling (for gradient computation)
+-------------------------------------------------------------------------------
+![](results/gradient.mp4)
 
+MC sampling
+-------------------------------------------------------------------------------
+![](results/randomMoving.mp4)
+
+Approach
+===============================================================================
+
+![Per frame visibility estimate (no Reconstruction)](results/target.png)
+
+Note: 
+* blue and orange lines are constructed from 10 rays per frame each.
+* green line is constructed from 20 rays per frame
+
+Our Goal
+------------------------------------------------------------------------------- 
+
+Reconstruct an estimate from a combination of 
+    * blue + orange samples 
+    * green + orange samples 
+    * Combination of blue + orange + green samples
+
+How should we distribute the number of rays used to collect each sample?
+
+Preliminary results
+-------------------------------------------------------------------------------
+![Simple moving avg over 10 frames](results/naiveFiltering.png)
+![Moving avg + static samples](results/naiveFiltering.png)
 
 <!-- Markdeep: --><style class="fallback">body{visibility:hidden;white-space:pre;font-family:monospace}</style><script src="markdeep.min.js"></script><script src="https://casual-effects.com/markdeep/latest/markdeep.min.js"></script><script>window.alreadyProcessedMarkdeep||(document.body.style.visibility="visible")</script>
