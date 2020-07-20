@@ -40,8 +40,8 @@ def sceneSetup(testName, time, seed, sampleCount, windowSz):
     receiverPosition = Point(0,-500)
     receiverLength = 1000
 
-    occluderMotion = 0
-    xPos = np.sin(occluderMotion * time * 2 * np.pi / 1000) * 500
+    occluderMotion = 12
+    xPos = np.sin(occluderMotion * time * 2 * np.pi / 1000) * np.cos(occluderMotion * time * 2 * np.pi / 1000) * 500
     yPos =  np.sin(occluderMotion * time * 2 * np.pi / 500) * 250
     rot = ((occluderMotion * time) % 360)
     occluderPosition = Point(xPos, yPos)
@@ -65,7 +65,7 @@ def sceneSetup(testName, time, seed, sampleCount, windowSz):
     #scene.draw()
    
     referencePattern = np.arange(0.0001, 1, 1.0 / 3000.0)
-    np.random.seed(seed)
+    np.random.seed(time % windowSz)
     patternStatic = np.arange(0.5 / sampleCount, 1, 1.0 / sampleCount)
     jitter = (np.random.uniform(size=sampleCount) - 1) * 0.8
     pattern_0, _ = np.modf(patternStatic + jitter / sampleCount + time / float(windowSz))
