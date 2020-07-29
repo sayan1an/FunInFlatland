@@ -40,8 +40,8 @@ def sceneSetup(testName, time, seed, sampleCount, velocity):
     receiverPosition = Point(0,-500)
     receiverLength = 1000
 
-    occluderMotion = 1
-    xPos = np.sin(occluderMotion * time * 2 * np.pi / 1000) * 500
+    occluderMotion = 12
+    xPos = np.sin(occluderMotion * time * 2 * np.pi / 1000) * np.cos(occluderMotion * time * 2 * np.pi / 1000) * 500
     yPos =  np.sin(occluderMotion * time * 2 * np.pi / 500) * 250
     rot = ((occluderMotion * time) % 360)
     occluderPosition = Point(xPos, yPos)
@@ -81,11 +81,9 @@ def sceneSetup(testName, time, seed, sampleCount, velocity):
     #return rayTrace(scene, light, receiverPosition, pattern_n2, True, 'blue'), rayTrace(scene, light, receiverPosition, pattern_n1, True, 'green'), rayTrace(scene, light, receiverPosition, pattern_0, True, 'yellow'), rayTrace(scene, light, receiverPosition, pattern_p1, True, 'magenta'), rayTrace(scene, light, receiverPosition, pattern_p2, True, 'red'), rayTrace(scene, light, receiverPosition, randomPattern), rayTrace(scene, light, receiverPosition, referencePattern)
     return rayTrace(scene, light, receiverPosition, pattern_n2), rayTrace(scene, light, receiverPosition, pattern_n1), rayTrace(scene, light, receiverPosition, pattern_0), rayTrace(scene, light, receiverPosition, pattern_p1), rayTrace(scene, light, receiverPosition, pattern_p2), rayTrace(scene, light, receiverPosition, randomPattern), rayTrace(scene, light, receiverPosition, referencePattern)
 
-
-
 def multiProcFn(start:int, end:int, stn2, stn1, stn0, stp1, stp2, stmc, stRef):
     windowSize = 11
-    sampleCnt = 40
+    sampleCnt = 15
     seed = 51
     for t in range(start, end):
         n2, n1, n0, p1, p2, mc, ref = sceneSetup(testname, t, seed, sampleCnt, 1.0 / windowSize)
@@ -128,6 +126,6 @@ if __name__ == '__main__':
     #sc - sampleCount for current frame
     #sg - sampleCount for gradient frame
     #ws - window size
-    np.savez_compressed(testname, n2=n2, n1=n1, n0=n0, p1=p1, p2=p2, mc=monteCarlo, r=reference, sc = 40, ws = 11)
+    np.savez_compressed(testname, n2=n2, n1=n1, n0=n0, p1=p1, p2=p2, mc=monteCarlo, r=reference, sc = 15, ws = 11)
 
     #tl.done()

@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-data = np.load('OccluderMotion_ffast.npz')
+data = np.load('OccluderMotion_baseline_t3.npz')
 
 windowSize = data['ws']
 sampleCount = data['sc']
@@ -28,6 +28,8 @@ mvAvgMc = mvAvgFilter(windowSize, mc)
 plt.plot(mvAvg[windowSize:550], label="Coherent samples, variance:{0:0.6f}, MSE:{1:1.6f}".format(np.std(mvAvg[windowSize:] - ref[windowSize - windowSize // 2: - windowSize // 2 + 1]), np.mean((mvAvg[windowSize:] - ref[windowSize - windowSize // 2: - windowSize // 2 + 1])**2)**0.5) )
 plt.plot(mvAvgMc[windowSize:550], label="MC samples, variance:{0:0.6f}, MSE:{1:1.6f}".format(np.std(mvAvgMc[windowSize:] - ref[windowSize - windowSize // 2: - windowSize // 2 + 1]), np.mean((mvAvgMc[windowSize:] - ref[windowSize - windowSize // 2: - windowSize // 2 + 1])**2)**0.5))
 plt.plot(ref[windowSize - windowSize // 2: 550 - windowSize // 2 + 1], label="Reference")
+plt.xlabel('time')
+plt.ylabel('visibility')
 plt.legend()
 plt.show()
 
@@ -60,12 +62,16 @@ print(np.mean((actualErrorPlt[:- windowSize // 2 + 1] - predictedErrorPlt)**2)**
 
 plt.plot(predictedErrorPlt[:500], label="Predicted error")
 plt.plot(actualErrorPlt[:500], label="Actual error")
+plt.xlabel('time')
+plt.ylabel('Error')
 plt.legend()
 plt.show()
 
 plt.plot(mvAvg[2*windowSize:550] + predictedError[2*windowSize + windowSize // 2: 550 + windowSize // 2], label="Coherent samples, variance:{0:0.6f}, MSE:{1:1.6f}".format(np.std(mvAvg[2*windowSize:-windowSize // 2 + 1] + predictedError[2*windowSize + windowSize // 2:]- ref[2*windowSize - windowSize // 2: - windowSize // 2 + 1][:- windowSize // 2 + 1]), np.mean((mvAvg[2*windowSize:-windowSize // 2 + 1] + predictedError[2*windowSize + windowSize // 2:]- ref[2*windowSize - windowSize // 2: - windowSize // 2 + 1][:- windowSize // 2 + 1])**2)**0.5) )
 plt.plot(mvAvgMc[2*windowSize:550], label="MC samples, variance:{0:0.6f}, MSE:{1:1.6f}".format(np.std(mvAvgMc[windowSize:] - ref[windowSize - windowSize // 2: - windowSize // 2 + 1]), np.mean((mvAvgMc[windowSize:] - ref[windowSize - windowSize // 2: - windowSize // 2 + 1])**2)**0.5))
 plt.plot(ref[2*windowSize - windowSize // 2: 550 - windowSize // 2 + 1], label="Reference")
+plt.xlabel('time')
+plt.ylabel('Visibility')
 plt.legend()
 plt.show()
 
@@ -94,5 +100,7 @@ mvAvg = mvAvgFilterAdv2(windowSize, n0)
 plt.plot(mvAvg[windowSize:550], label="Coherent samples, variance:{0:0.6f}, MSE:{1:1.6f}".format(np.std(mvAvg[windowSize:] - ref[windowSize - windowSize // 2: - windowSize // 2 + 1]), np.mean((mvAvg[windowSize:] - ref[windowSize - windowSize // 2: - windowSize // 2 + 1])**2)**0.5) )
 plt.plot(mvAvgMc[windowSize:550], label="MC samples, variance:{0:0.6f}, MSE:{1:1.6f}".format(np.std(mvAvgMc[windowSize:] - ref[windowSize - windowSize // 2: - windowSize // 2 + 1]), np.mean((mvAvgMc[windowSize:] - ref[windowSize - windowSize // 2: - windowSize // 2 + 1])**2)**0.5))
 plt.plot(ref[windowSize - windowSize // 2: 550 - windowSize // 2 + 1], label="Reference")
+plt.xlabel('time')
+plt.ylabel('Visibility')
 plt.legend()
 plt.show()

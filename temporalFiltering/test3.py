@@ -65,7 +65,7 @@ def sceneSetup(testName, time, seed, sampleCount, windowSz):
     #scene.draw()
    
     referencePattern = np.arange(0.0001, 1, 1.0 / 3000.0)
-    np.random.seed(time % windowSz)
+    np.random.seed(seed)
     patternStatic = np.arange(0.5 / sampleCount, 1, 1.0 / sampleCount)
     jitter = (np.random.uniform(size=sampleCount) - 1) * 0.8
     pattern_0, _ = np.modf(patternStatic + jitter / sampleCount + time / float(windowSz))
