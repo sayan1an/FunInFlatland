@@ -109,9 +109,10 @@ def mvAvgFilterAdv2Eff(windowSz : int, data):
     correctionLast = 0
     for i in range(data.shape[0]):
         inNew = data[i]
+        inOld = window[i % windowSz]
         gradOld = windowGrad[i % windowSz]
         oldFiltered = windowFilteredNoGrad[i%(windowSz//2)]
-        gradNew = (inNew - window[i % windowSz]) / windowSz
+        gradNew = (inNew - inOld) / windowSz
         windowGrad[i % windowSz] = gradNew
         window[i % windowSz] = inNew
         
