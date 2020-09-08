@@ -96,7 +96,42 @@ def mvAvgFilterAdv2(windowSz : int, data):
 
     return filtered
 
+#A more efficeint version of mvAvgFilterAdv2
+#Does not contain the inner for loop over gradients
+def mvAvgFilterAdv2Eff(windowSz : int, data):
+    window = np.zeros(shape=windowSz)
+    windowGrad = np.zeros(shape=windowSz)
+    filtered = np.zeros(shape=data.shape)
+    
+    windowSum = 0
+    gradSum = 0
+    correctionLast = 0
+    for i in range(data.shape[0]):
+        inNew = data[i]
+        gradOld = windowGrad[i % windowSz]
+        gradNew = (inNew - window[i % windowSz]) / windowSz
+        windowGrad[i % windowSz] = gradNew
+        window[i % windowSz] = inNew
+        
+        correction = correctionLast - ((windowSz // 2) + 1) * gradOld - (windowSz // 2) * gradNew + gradSum
+        windowSum += gradNew
+        correctionLast = correction
+        
+
+        filtered[i] = windowSum
+        gradSum += gradNew - gradOld
+        if i >= windowSz // 2:
+            filtered[i - windowSz // 2] += correction / windowSz
+
+    return filtered
+
 mvAvg = mvAvgFilterAdv2(windowSize, n0)
+mvAvg2 = mvAvgFilterAdv2Eff(windowSize, n0)
+
+print("Efficient gradient error:")
+print(np.sqrt(np.mean((mvAvg - mvAvg2)[2*windowSize:]**2)))
+
+
 plt.plot(mvAvg[windowSize:550], label="Coherent samples, variance:{0:0.6f}, MSE:{1:1.6f}".format(np.std(mvAvg[windowSize:] - ref[windowSize - windowSize // 2: - windowSize // 2 + 1]), np.mean((mvAvg[windowSize:] - ref[windowSize - windowSize // 2: - windowSize // 2 + 1])**2)**0.5) )
 plt.plot(mvAvgMc[windowSize:550], label="MC samples, variance:{0:0.6f}, MSE:{1:1.6f}".format(np.std(mvAvgMc[windowSize:] - ref[windowSize - windowSize // 2: - windowSize // 2 + 1]), np.mean((mvAvgMc[windowSize:] - ref[windowSize - windowSize // 2: - windowSize // 2 + 1])**2)**0.5))
 plt.plot(ref[windowSize - windowSize // 2: 550 - windowSize // 2 + 1], label="Reference")
